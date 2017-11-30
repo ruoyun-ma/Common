@@ -146,6 +146,13 @@ public class RFPulse {
         flipAngle = tx_amp * 90 / tx_amp90;
     }
 
+    public void setAmp(Order order, double... amps) {
+        setSequenceTableValues(amplitudeTable, order, amps);
+        if (amps.length > 0) {
+            tx_amp = amps[0];
+        }
+    }
+
     public void setAmp(NumberParam ampParam) {
         tx_amp = ampParam.getValue().doubleValue();
         setSequenceTableSingleValue(amplitudeTable, tx_amp);
@@ -186,8 +193,8 @@ public class RFPulse {
         // Calculate amp with the new and real Att
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = attParamTxAmp180(txCh);
-
-        setSequenceTableSingleValue(amplitudeTable, tx_amp90 * flipAngle / 90);
+        tx_amp = tx_amp90 * flipAngle / 90;
+        setSequenceTableSingleValue(amplitudeTable, tx_amp);
         attParam.setValue(txAtt);
         // set calculated parameters to display values & sequence
         return test_change_time;
@@ -302,7 +309,7 @@ public class RFPulse {
         double instrument_power = (flipAngle < 135 ? pulse.getHardPulse90().y : pulse.getHardPulse180().y) / power_factor;
         powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
         if (powerPulse > pulse.getMaxRfPowerPulsed()) {  // TX LENGTH 90 MIN
-            pulseDuration = Math.ceil(instrument_length / Math.sqrt(pulse.getMaxRfPowerPulsed() / (instrument_power * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2))) * 10e5) / 10e5;
+            pulseDuration = Math.ceil(instrument_length / Math.sqrt(pulse.getMaxRfPowerPulsed() / (instrument_power * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2))));
             setSequenceTableSingleValue(timeTable, pulseDuration);
             powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
             test_change_time = false;
@@ -393,10 +400,11 @@ public class RFPulse {
      * @param abs     true if you want the absolute values and false otherwise
      */
     private void setShapeTableValuesFromSincGen(Table table, int nbpoint, int nblobe, double amp, Boolean abs, String window) throws Exception {
+        String name = "Sinus Cardinal with Apodisation";
         TableGeneratorInterface gen;
-        gen = LoaderFactory.getTableGeneratorPluginLoader().getPluginByName("Sinus Cardinal with Apodisation");
+        gen = LoaderFactory.getTableGeneratorPluginLoader().getPluginByName(name);
         if (gen == null) {
-            throw new IllegalStateException("Table generator not found: Sinus Cardinal with Apodisation");
+            throw new IllegalStateException("Table generator not found: " + name);
         }
         table.setGenerator(gen);
         gen.getParams().get(0).setValue(nbpoint);
@@ -418,10 +426,11 @@ public class RFPulse {
      * @param abs     true if you want the absolute values and false otherwise
      */
     private void setShapeTableValuesFromGaussGen(Table table, int nbpoint, double width, double amp, Boolean abs) throws Exception {
+        String name = "Gaussian";
         TableGeneratorInterface gen;
-        gen = LoaderFactory.getTableGeneratorPluginLoader().getPluginByName("Gaussian");
+        gen = LoaderFactory.getTableGeneratorPluginLoader().getPluginByName(name);
         if (gen == null) {
-            throw new IllegalStateException("Table generator not found: Gaussian");
+            throw new IllegalStateException("Table generator not found: " + name);
         }
         table.setGenerator(gen);
         gen.getParams().get(0).setValue(nbpoint);
@@ -603,4 +612,3 @@ public class RFPulse {
     }
 
 }
-
