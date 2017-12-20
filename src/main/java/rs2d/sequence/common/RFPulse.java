@@ -98,7 +98,7 @@ public class RFPulse {
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    //                  general  methodes: get set
+    //                  general  methods: get set
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     public double getPulseDuration() {
         return pulseDuration;

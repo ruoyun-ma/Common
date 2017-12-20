@@ -295,8 +295,11 @@ public class Gradient {
      * @return sw
      */
     public double solveSpectralWidthMax(double fov) throws Exception {
-        double spectralWidth = getInferiorSpectralWidth(gMax * GradientMath.GAMMA * fov);
-        spectralWidth = 3906250.0 / (Math.ceil(3906250.0 / spectralWidth) + 1); // to get the nearest SW bellow the limit
+        double spectralWidth_init = (gMax * GradientMath.GAMMA * fov);
+        double spectralWidth = spectralWidth_init;
+        while (HardwareHandler.getInstance().getSequenceHandler().getCompiler().getNearestSW(spectralWidth) >= spectralWidth_init) {
+            spectralWidth = getInferiorSpectralWidth(spectralWidth);
+        }
         spectralWidth = HardwareHandler.getInstance().getSequenceHandler().getCompiler().getNearestSW(spectralWidth);
         return spectralWidth;
     }
@@ -353,8 +356,8 @@ public class Gradient {
         this.sliceThicknessExcitation = slice_thickness_excitation;
         amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
         if (amplitude > 100.0) {
-            sliceThicknessExcitation = (tx_bandwidth / ((GradientMath.GAMMA) * gMax));
-            amplitude = 100;
+            sliceThicknessExcitation = ceilToSubDecimal(tx_bandwidth / ((GradientMath.GAMMA) * gMax), 6);
+            amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
             testSliceThickness = false;
         }
         calculateStaticArea();
@@ -465,6 +468,10 @@ public class Gradient {
     // ----------------- General Methode----------------------------------------------
     private double getInferiorSpectralWidth(double spectral_width) {
         return 3906250.0 / (Math.ceil(3906250.0 / spectral_width) + 1);
+    }
+
+    private double ceilToSubDecimal(double numberToBeRounded, double Order) {
+        return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
     }
 
     private void setSequenceTableValues(Table table, Order order, double... values) {
