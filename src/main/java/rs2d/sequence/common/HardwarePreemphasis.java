@@ -5,6 +5,19 @@ import rs2d.spinlab.hardware.controller.peripherique.GradientHandlerInterface;
 
 import java.util.ArrayList;
 
+
+/*
+add
+
+
+    import rs2d.sequence.common.HardwarePreemphasis;
+        HardwarePreemphasis hardwarePreemphasis = new HardwarePreemphasis();
+        setParamValue(HARDWARE_PREEMPHASIS_A, hardwarePreemphasis.getAmplitude());
+        setParamValue(HARDWARE_PREEMPHASIS_T, hardwarePreemphasis.getTime());
+        setParamValue(HARDWARE_DC, hardwarePreemphasis.getDC());
+        setParamValue(HARDWARE_A0, hardwarePreemphasis.getA0());
+        */
+
 public class HardwarePreemphasis {
     private ArrayList<Number> preemphasisT = new ArrayList<>();
     private ArrayList<Number> preemphasisA = new ArrayList<>();
