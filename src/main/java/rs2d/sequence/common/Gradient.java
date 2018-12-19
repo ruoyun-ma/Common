@@ -11,6 +11,7 @@ import rs2d.spinlab.tools.table.Order;
 
 /**
  * Class Gradient
+ * V2.2- 2018-12-19 JR
  * V2.1- 2017-10-24 JR
  */
 public class Gradient {
@@ -97,7 +98,11 @@ public class Gradient {
         if (Double.isNaN(amplitude)) {
             return 0.0;
         } else {
-            return amplitude * gMax / 100.0;
+            double amp = amplitude;
+            if (amplitude == 0.0 & amplitudeArray != null) {
+                amp = amplitudeArray[0];
+            }
+            return amp * gMax / 100.0;
         }
     }
 

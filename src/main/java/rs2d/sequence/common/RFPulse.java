@@ -22,6 +22,7 @@ import java.util.List;
 
 /**
  * Class RFPulse
+ * V2.2- 2018-12-19 JR
  * V2.1- 2017-10-24 JR
  */
 public class RFPulse {
@@ -236,7 +237,7 @@ public class RFPulse {
      */
     private double calculateTxAmp90(InstrumentTxChannel txCh) {
         if (txAtt == -1) {
-            txAtt = (int) attParam.getValue();
+            txAtt = ((NumberParam) attParam).getValue().intValue();
         }
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
@@ -592,6 +593,22 @@ public class RFPulse {
         setSequenceTableValues(FrequencyOffsetTable, FrequencyOffsetOrder, txFrequencyOffsetTable[0]);
     }
 
+    public void setFrequencyOffsetReadoutEchoPlanar(Gradient grad, double off_center_distance, int ETL, Order tableorder) {
+        numberOfFreqOffset = ETL;
+        FrequencyOffsetOrder = tableorder;
+        double grad_amp_read_read_mTpm = grad.getAmplitude_mTpm();// amplitude in T/m
+        System.out.println("numberOfFreqOffset "+numberOfFreqOffset);
+        txFrequencyOffsetTable = new double[numberOfFreqOffset];
+        for (int i = 0; i < numberOfFreqOffset; i++) {
+            if (i % 2 == 0) {
+                txFrequencyOffsetTable[i] = -grad_amp_read_read_mTpm * off_center_distance * (GradientMath.GAMMA);
+            } else {
+                txFrequencyOffsetTable[i] = grad_amp_read_read_mTpm * off_center_distance * (GradientMath.GAMMA);
+            }
+        }
+        setSequenceTableValues(FrequencyOffsetTable, FrequencyOffsetOrder, txFrequencyOffsetTable);
+
+    }
     /**
      * calculate and set the FrequencyOffset for to induce a phase offset
      *
