@@ -1,7 +1,9 @@
 package rs2d.sequence.common;
 
 import rs2d.spinlab.hardware.controller.HardwareHandler;
+import rs2d.spinlab.hardware.controller.gradient.GradientHandler;
 import rs2d.spinlab.hardware.controller.peripherique.GradientHandlerInterface;
+import rs2d.spinlab.hardware.devices.DeviceManager;
 
 import java.util.ArrayList;
 
@@ -38,7 +40,8 @@ public class HardwarePreemphasis {
             A0.add(0);
         }
 
-        GradientHandlerInterface gradientHandler = HardwareHandler.getInstance().getGradientHandler();
+        GradientHandler gradientHandler = DeviceManager.getInstance().getGradientHandler().get();
+//        GradientHandlerInterface gradientHandler = HardwareHandler.getInstance().getGradientHandler();
         if (gradientHandler.isAvailable() && gradientHandler.isConnected()) {
             for (String param : gradientHandler.getAll()) {
                 int v = (param.charAt(0) == 'x') ? 0 : ((param.charAt(0) == 'y') ? 1 : ((param.charAt(0) == 'z') ? 2 : 3));

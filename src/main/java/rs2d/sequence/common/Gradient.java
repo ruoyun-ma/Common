@@ -790,7 +790,7 @@ public class Gradient {
             int[] tmp = Centric(acquisitionMatrixDimension2D);
             for (int j = 0; j < acquisitionMatrixDimension2D; j++) {
                 int[] indexScan = plugin.invTransf(0, j, 0, 0);
-                 if ("Centric4D".equalsIgnoreCase(plugin.getName())) {
+                if ("Centric4D".equalsIgnoreCase(plugin.getName())) {
                     indexScan[1] = tmp[j];
                 }
                 loopNumber = indexScan[0] / acquisitionMatrixDimension1D; // Echo-block number: ETL-loop index
@@ -850,7 +850,7 @@ public class Gradient {
         }
         return tmpInv;
     }
-// add dummu scan for the PE gradient
+    // add dummu scan for the PE gradient
     public void addDummy(int dummyScan) {
         if (steps > 0) {
             double[] tmpAmp = new double[steps];
