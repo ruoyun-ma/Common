@@ -17,21 +17,22 @@ public class HardwareShim {
     private String shimText = new String();
 
     public HardwareShim() throws Exception {
-        ShimHandler getShimHandler = DeviceManager.getInstance().getShimHandler().get();
-//        ShimHandlerInterface getShimHandler = HardwareHandler.getInstance().getShimHandler();
-        if (getShimHandler.isAvailable() && getShimHandler.isConnected()) {
-            for (String param : getShimHandler.getAll()) {
-                if (shimText.length() == 0) {
-                    shimText = new String(param);
-                } else {
-                    shimText = shimText.concat(" ");
-                    shimText = shimText.concat(param);
+        if (DeviceManager.getInstance().getShimHandler().isPresent()) {
+            ShimHandler getShimHandler = DeviceManager.getInstance().getShimHandler().get();
+            if (getShimHandler.isAvailable() && getShimHandler.isConnected()) {
+                for (String param : getShimHandler.getAll()) {
+                    if (shimText.length() == 0) {
+                        shimText = new String(param);
+                    } else {
+                        shimText = shimText.concat(" ");
+                        shimText = shimText.concat(param);
+                    }
+                    shim.add(getShimHandler.read(param).getValue());
                 }
-                shim.add(getShimHandler.read(param).getValue());
+            } else {
+                shimText = new String("NotConnected");
+                shim.add(0);
             }
-        } else {
-            shimText = new String("NotConnected");
-            shim.add(0);
         }
     }
 

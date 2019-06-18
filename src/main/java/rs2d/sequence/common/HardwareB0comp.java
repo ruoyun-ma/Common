@@ -1,5 +1,6 @@
 package rs2d.sequence.common;
 
+import rs2d.commons.log.Log;
 import rs2d.spinlab.hardware.controller.HardwareHandler;
 import rs2d.spinlab.hardware.controller.gradient.GradientHandler;
 import rs2d.spinlab.hardware.controller.peripherique.GradientHandlerInterface;
@@ -14,9 +15,7 @@ public class HardwareB0comp {
         amp = 0;
         phase = 0;
         status = false;
-//        GradientHandlerInterface gradientHandler = HardwareHandler.getInstance().getGradientHandler();
-        if (DeviceManager.getInstance().getGradientHandler().isPresent()){
-            GradientHandler gradientHandler = DeviceManager.getInstance().getGradientHandler().get();
+        DeviceManager.getInstance().getGradientHandler().ifPresent(gradientHandler -> {
             if (gradientHandler.isAvailable() && gradientHandler.isConnected()) {
                 try {
                     // available after V1.214
@@ -25,10 +24,11 @@ public class HardwareB0comp {
                     status = gradientHandler.isB0compEnabled();
 
                 } catch (Exception e) {
-                    System.out.println(" B0-Compensation not supported by this ");
+                    System.out.println(" B0-Compensation not supported by this " );
+                    Log.info(getClass(), " B0-Compensation not supported by this ");
                 }
             }
-        }
+        });
     }
 
     public double getAmp() {

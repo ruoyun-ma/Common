@@ -1,8 +1,6 @@
 package rs2d.sequence.common;
 
-import rs2d.spinlab.hardware.controller.HardwareHandler;
 import rs2d.spinlab.hardware.controller.gradient.GradientHandler;
-import rs2d.spinlab.hardware.controller.peripherique.GradientHandlerInterface;
 import rs2d.spinlab.hardware.devices.DeviceManager;
 
 import java.util.ArrayList;
@@ -39,36 +37,36 @@ public class HardwarePreemphasis {
         while (A0.size() < 3) {
             A0.add(0);
         }
+        if (DeviceManager.getInstance().getGradientHandler().isPresent()) {
+            GradientHandler gradientHandler = DeviceManager.getInstance().getGradientHandler().get();
+            if (gradientHandler.isAvailable() && gradientHandler.isConnected()) {
+                for (String param : gradientHandler.getAll()) {
+                    int v = (param.charAt(0) == 'x') ? 0 : ((param.charAt(0) == 'y') ? 1 : ((param.charAt(0) == 'z') ? 2 : 3));
+                    if (param.charAt(1) == 'T' && param.charAt(2) != '0') {                 // T1 T2 T3
+                        v = v * 3 + Integer.parseInt(String.valueOf(param.charAt(2))) - 1;
+                        preemphasisT.set(v, gradientHandler.read(param).getValue());
 
-        GradientHandler gradientHandler = DeviceManager.getInstance().getGradientHandler().get();
-//        GradientHandlerInterface gradientHandler = HardwareHandler.getInstance().getGradientHandler();
-        if (gradientHandler.isAvailable() && gradientHandler.isConnected()) {
-            for (String param : gradientHandler.getAll()) {
-                int v = (param.charAt(0) == 'x') ? 0 : ((param.charAt(0) == 'y') ? 1 : ((param.charAt(0) == 'z') ? 2 : 3));
-                if (param.charAt(1) == 'T' && param.charAt(2) != '0') {                 // T1 T2 T3
-                    v = v * 3 + Integer.parseInt(String.valueOf(param.charAt(2))) - 1;
-                    preemphasisT.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(1) == 'A' && param.charAt(2) != '0') {          // A1 A2 A3
+                        v = v * 3 + Integer.parseInt(String.valueOf(param.charAt(2))) - 1;
+                        preemphasisA.set(v, gradientHandler.read(param).getValue());
 
-                } else if (param.charAt(1) == 'A' && param.charAt(2) != '0') {          // A1 A2 A3
-                    v = v * 3 + Integer.parseInt(String.valueOf(param.charAt(2))) - 1;
-                    preemphasisA.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(1) == 'A' && param.charAt(2) == '0') {          // A0
+                        A0.set(v, gradientHandler.read(param).getValue());
 
-                } else if (param.charAt(1) == 'A' && param.charAt(2) == '0') {          // A0
-                    A0.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(1) == 'D') {                                    // DC
+                        DC.set(v, gradientHandler.read(param).getValue());
 
-                } else if (param.charAt(1) == 'D') {                                    // DC
-                    DC.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(0) == 'B') {                                    // DC
+                        DC.set(v, gradientHandler.read(param).getValue());
 
-                } else if (param.charAt(0) == 'B') {                                    // DC
-                    DC.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(1) == 'B' && param.charAt(3) == 'T') {          // B0T1 B0T2 B0T3
+                        v = 9 + v * 3 + Integer.parseInt(String.valueOf(param.charAt(4))) - 1;
+                        preemphasisT.set(v, gradientHandler.read(param).getValue());
 
-                } else if (param.charAt(1) == 'B' && param.charAt(3) == 'T') {          // B0T1 B0T2 B0T3
-                    v = 9 + v * 3 + Integer.parseInt(String.valueOf(param.charAt(4))) - 1;
-                    preemphasisT.set(v, gradientHandler.read(param).getValue());
-
-                } else if (param.charAt(1) == 'B' && param.charAt(3) == 'A') {           // B0A1 B0A2 B0A3
-                    v = 9 + v * 3 + Integer.parseInt(String.valueOf(param.charAt(4))) - 1;
-                    preemphasisA.set(v, gradientHandler.read(param).getValue());
+                    } else if (param.charAt(1) == 'B' && param.charAt(3) == 'A') {           // B0A1 B0A2 B0A3
+                        v = 9 + v * 3 + Integer.parseInt(String.valueOf(param.charAt(4))) - 1;
+                        preemphasisA.set(v, gradientHandler.read(param).getValue());
+                    }
                 }
             }
         }
