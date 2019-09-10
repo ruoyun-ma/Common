@@ -347,7 +347,7 @@ public class Gradient {
     public void refocalizeGradient(Gradient grad, double ratio) {
         bStaticGradient = true;
         double amp;
-          if (grad.getSteps() > 1)
+        if (grad.getSteps() > 1)
             amp = grad.getAmplitudeArray(0);
         else {
             amp = !Double.isNaN(grad.getAmplitude()) ? grad.getAmplitude() : grad.getAmplitudeArray(0);
@@ -672,7 +672,7 @@ public class Gradient {
         gradflowcomp.setMaxArea_PE(maxAreaPE2);
         preparePhaseEncoding(matrixDimension, fovDim, isKSCentred, ratioA1);
         gradflowcomp.preparePhaseEncoding(matrixDimension, fovDim, isKSCentred, ratioA2);
-     }
+    }
 
     public void preparePhaseEncodingForCheckWithFlowComp(int matrixDimensionForCheck, int matrixDimension, double fovDim, boolean isKSCentred, Gradient gradflowcomp, double delta, double ratioMomentum) {
         gradFlowComp = gradflowcomp;
@@ -743,16 +743,16 @@ public class Gradient {
         return amplitudeArray;
     }
 
-    public double[] refocalizePhaseEncodingGradientSEEPI(Gradient grad, Gradient gradBlip, int echoTrainLength) {
+    public double[] refocalizePhaseEncodingGradientSEEPI(Gradient grad, Gradient gradBlip, int echoTrainLength, boolean isPrephasingBefore180) {
         steps = grad.getSteps();
         if (steps > 0) {
             order = grad.getOrder();
             amplitudeArray = new double[steps];
             for (int i = 0; i < steps; i++) {
-                amplitudeArray[i] = -(-grad.getAmplitudeArray(i) * grad.getEquivalentTime()
+                amplitudeArray[i] = -((isPrephasingBefore180 ? -1 : 1) * grad.getAmplitudeArray(i) * grad.getEquivalentTime()
                         + gradBlip.getAmplitude() * gradBlip.getEquivalentTime() * echoTrainLength) / equivalentTime;
             }
-         }
+        }
         return amplitudeArray;
     }
 
@@ -768,6 +768,32 @@ public class Gradient {
         }
         amplitudeArray = newTable;
         steps = new_steps;
+    }
+
+    public void reoderPhaseEncodingForSEEPIplus2() {
+        // flow Comp
+        int new_steps = steps + 2;
+        double[] newTable = new double[new_steps];
+        newTable[0] = 0;
+        for (int i = 0; i < steps; i++) {
+            newTable[i + 1] = -amplitudeArray[i];
+        }
+        newTable[steps + 1] = 0;
+        amplitudeArray = newTable;
+        steps = new_steps;
+    }
+
+    public void inversePolarity() {
+        if (!Double.isNaN(amplitude)) {
+            amplitude = -amplitude;
+        }
+        if (amplitudeArray != null) {
+            // flow Comp
+            for (int i = 0; i < steps; i++) {
+                amplitudeArray[i] = -amplitudeArray[i];
+            }
+        }
+
     }
 
 
@@ -1183,7 +1209,7 @@ public class Gradient {
             decimationRef = 1;
             SWmax = SysClock / 32 / decimationRef;
         }
-        double decim = (Math.round(SWmax * decimationRef / spectralWidth) );
+        double decim = (Math.round(SWmax * decimationRef / spectralWidth));
         return (SWmax * decimationRef) / (decim);
     }
 
@@ -1199,7 +1225,7 @@ public class Gradient {
             decimationRef = 1;
             SWmax = SysClock / 32 / decimationRef;
         }
-        double decim = (Math.ceil(SWmax * decimationRef / spectralWidth)-1 );
+        double decim = (Math.ceil(SWmax * decimationRef / spectralWidth) - 1);
         return (SWmax * decimationRef) / (decim);
 
     }
