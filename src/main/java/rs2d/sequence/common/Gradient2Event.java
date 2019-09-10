@@ -4,6 +4,7 @@ import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequence.Sequence;
 import rs2d.spinlab.sequence.table.Shape;
 import rs2d.spinlab.sequence.table.Table;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 
 /**
  * Class Gradient
@@ -21,14 +22,14 @@ public class Gradient2Event extends Gradient {
     }
 
 
-    public static Gradient2Event createGradient(Sequence sequence, String amplitudeTab, String shapeUpTab, String shapeDownTab, String rampTimeTab) {
-        return new Gradient2Event(sequence.getPublicTable(amplitudeTab), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeTab), sequence.getPublicTable(rampTimeTab));
+    public static Gradient2Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab) {
+        return new Gradient2Event(sequence.getPublicTable(amplitudeTab.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeTab.name()), sequence.getPublicTable(rampTimeTab.name()));
     }
 
-    public static Gradient2Event createGradient(Sequence sequence, String amplitudeTab, String shapeUpTab, String shapeDownTab, String rampTimeUpTab, String rampTimeDownTab) {
-        return new Gradient2Event(sequence.getPublicTable(amplitudeTab), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeUpTab), sequence.getPublicTable(rampTimeDownTab));
+    public static Gradient2Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab) {
+        return new Gradient2Event(sequence.getPublicTable(amplitudeTab.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeUpTab.name()), sequence.getPublicTable(rampTimeDownTab.name()));
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

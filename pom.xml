@@ -14,12 +14,12 @@
     <dependency>
       <groupId>rs2d</groupId>
       <artifactId>spinlab</artifactId>
-      <version>2019.01.3</version>
+      <version>2019.06.2</version>
     </dependency>
     <dependency>
       <groupId>rs2d</groupId>
       <artifactId>rs2d-commons</artifactId>
-      <version>2019.01.3</version>
+      <version>2019.06.2</version>
     </dependency>
   </dependencies>
 </project>

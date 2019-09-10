@@ -1,5 +1,6 @@
 package rs2d.sequence.common;
 
+
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
 import rs2d.spinlab.hardware.devices.DeviceManager;
 import rs2d.spinlab.instrument.util.GradientMath;
@@ -7,10 +8,12 @@ import rs2d.spinlab.sequence.Sequence;
 import rs2d.spinlab.sequence.table.Shape;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
 
 /**
  * Class Gradient
+ * V2.6 constructor with generatorSequenceParam .name() V2019.06
  * V2.5- getNearestSW Sup Inf for Cam4
  * V2.4- 2019-06-06 JR from TOF Flow compensation
  * V2.3- 2019-06-06 JR from DW EPI
@@ -71,14 +74,14 @@ public class Gradient {
         init();
     }
 
-    public static Gradient createGradient(Sequence sequence, String amplitudeTab, String flat_TimeTab, String shapeUpTab, String shapeDownTab, String rampTimeTab) {
-        return new Gradient(sequence.getPublicTable(amplitudeTab), sequence.getPublicTable(flat_TimeTab), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeTab), sequence.getPublicTable(rampTimeTab));
+    public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab) {
+        return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getTable(rampTimeTab.name()), sequence.getTable(rampTimeTab.name()));
     }
 
-    public static Gradient createGradient(Sequence sequence, String amplitudeTab, String flat_TimeTab, String shapeUpTab, String shapeDownTab, String rampTimeUpTab, String rampTimeDownTab) {
-        return new Gradient(sequence.getPublicTable(amplitudeTab), sequence.getPublicTable(flat_TimeTab), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeUpTab), sequence.getPublicTable(rampTimeDownTab));
+    public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab) {
+        return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getTable(rampTimeUpTab.name()), sequence.getTable(rampTimeDownTab.name()));
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

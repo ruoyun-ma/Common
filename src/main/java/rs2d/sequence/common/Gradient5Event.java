@@ -7,6 +7,7 @@ import rs2d.spinlab.sequence.Sequence;
 import rs2d.spinlab.sequence.table.Shape;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
 
 /**
@@ -32,22 +33,23 @@ public class Gradient5Event extends Gradient {
 
     }
 
-    public static Gradient5Event createGradient(Sequence sequence, String amplitudeTab, String flat_TimeTab1, String flat_TimeTab2, String flat_TimeTab3, String shapeUpTab, String shapeDownTab, String rampTimeTab) {
+    public static Gradient5Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab1, GeneratorSequenceParamEnum flat_TimeTab2, GeneratorSequenceParamEnum flat_TimeTab3, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab) {
 //        System.out.println(" ");
 //        System.out.println(" Gradient5Event createGradient 1  ");
 //        System.out.println(" flat_TimeTab1  " + flat_TimeTab1);
 //        System.out.println(flat_TimeTab1);
-        return new Gradient5Event(sequence.getPublicTable(amplitudeTab), sequence.getPublicTable(flat_TimeTab1), sequence.getPublicTable(flat_TimeTab2), sequence.getPublicTable(flat_TimeTab3), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeTab), sequence.getPublicTable(rampTimeTab));
+        return new Gradient5Event(sequence.getPublicTable(amplitudeTab.name()), sequence.getPublicTable(flat_TimeTab1.name()), sequence.getPublicTable(flat_TimeTab2.name()), sequence.getPublicTable(flat_TimeTab3.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeTab.name()), sequence.getPublicTable(rampTimeTab.name()));
     }
 
-    public static Gradient5Event createGradient(Sequence sequence, String amplitudeTab, String flat_TimeTab1, String flat_TimeTab2, String flat_TimeTab3, String shapeUpTab, String shapeDownTab, String rampTimeUpTab, String rampTimeDownTab) {
+    public static Gradient5Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab1, GeneratorSequenceParamEnum flat_TimeTab2, GeneratorSequenceParamEnum flat_TimeTab3, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab) {
 //        System.out.println(" ");
 //        System.out.println(" Gradient5Event createGradient 2 ");
 //        System.out.println(" flat_TimeTab1  " + flat_TimeTab1);
-        return new Gradient5Event(sequence.getPublicTable(amplitudeTab), sequence.getPublicTable(flat_TimeTab1), sequence.getPublicTable(flat_TimeTab2), sequence.getPublicTable(flat_TimeTab3), (Shape) sequence.getPublicTable(shapeUpTab),
-                (Shape) sequence.getPublicTable(shapeDownTab), sequence.getPublicTable(rampTimeUpTab), sequence.getPublicTable(rampTimeDownTab));
+        return new Gradient5Event(sequence.getPublicTable(amplitudeTab.name()), sequence.getPublicTable(flat_TimeTab1.name()), sequence.getPublicTable(flat_TimeTab2.name()), sequence.getPublicTable(flat_TimeTab3.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeUpTab.name()), sequence.getPublicTable(rampTimeDownTab.name()));
     }
+
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  general  methodes
