@@ -13,6 +13,7 @@ import rs2d.spinlab.tools.table.Order;
 
 /**
  * Class Gradient
+ * V2.7 bug SE  RO prephasing bug
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
  * V2.5- getNearestSW Sup Inf for Cam4
  * V2.4- 2019-06-06 JR from TOF Flow compensation
@@ -335,7 +336,7 @@ public class Gradient {
      * @return equivalentTime :
      */
     public double prepareEquivalentTime() {
-        if (grad_shape_rise_time == Double.NaN) {
+        if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
         minTopTime = flatTimeTable.get(0).doubleValue();
@@ -347,17 +348,29 @@ public class Gradient {
         calculateStaticAmplitude();
     }
 
-    public void refocalizeGradient(Gradient grad, double ratio) {
+    //    refocalize the gradient with ratio of the top
+    public void refocalizeGradient(Gradient gradToRef, double ratio) {
         bStaticGradient = true;
-        double amp;
-        if (grad.getSteps() > 1)
-            amp = grad.getAmplitudeArray(0);
-        else {
-            amp = !Double.isNaN(grad.getAmplitude()) ? grad.getAmplitude() : grad.getAmplitudeArray(0);
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
+        if (Double.isNaN(equivalentTime)) {
+            prepareEquivalentTime();
         }
-        double gradArea = (grad.getEquivalentTimeBlock(3)[0] + grad.getEquivalentTimeFlat(grad.flatTimeTable, ratio)[0]) * amp;
-        staticArea = -gradArea;
-        calculateStaticAmplitude();
+
+        double amp;
+        if (gradToRef.getSteps() > 1) {
+            amp = gradToRef.getAmplitudeArray(0);
+            amplitudeArray = new double[gradToRef.getSteps()];
+            for (int i = 0; i < gradToRef.getSteps(); i++) {
+                amplitudeArray[i] = (ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
+//                    amplitudeArray[i] = -gradToRef.getAmplitudeArray(i);
+            }
+            steps = gradToRef.getSteps();
+        } else {
+            amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
+            staticArea = -gradArea;
+            calculateStaticAmplitude();
+        }
     }
 
     public void refocalizeGradientWithFlowComp(Gradient grad, double ratioTime, Gradient gradflowcomp) {
@@ -761,7 +774,6 @@ public class Gradient {
 
 
     public void reoderPhaseEncodingForSEEPI(int echoTrainLength) {
-        // flow Comp
         int new_steps = steps / echoTrainLength;
         double[] newTable = new double[new_steps];
         int fact = 1;
@@ -774,7 +786,6 @@ public class Gradient {
     }
 
     public void reoderPhaseEncodingForSEEPIplus2() {
-        // flow Comp
         int new_steps = steps + 2;
         double[] newTable = new double[new_steps];
         newTable[0] = 0;
@@ -796,7 +807,6 @@ public class Gradient {
                 amplitudeArray[i] = -amplitudeArray[i];
             }
         }
-
     }
 
 
