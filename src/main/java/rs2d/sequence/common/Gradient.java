@@ -13,6 +13,7 @@ import rs2d.spinlab.tools.table.Order;
 
 /**
  * Class Gradient
+ * V2.8 abs Gmax  & G < -100
  * V2.7 bug SE  RO prephasing bug
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
  * V2.5- getNearestSW Sup Inf for Cam4
@@ -62,7 +63,7 @@ public class Gradient {
 
     protected Gradient gradFlowComp = null;
 
-    protected static double gMax = GradientMath.getMaxGradientStrength();
+    protected static double gMax = Math.abs(GradientMath.getMaxGradientStrength());
 
     public Gradient(Table amplitudeTab, Table flat_TimeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab) {
         amplitudeTable = amplitudeTab;
@@ -496,7 +497,7 @@ public class Gradient {
         boolean testSpectralWidth = true;
         this.spectralWidth = spectralWidth;
         amplitude = spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
-        if (amplitude > 100.0) {
+        if (Math.abs(amplitude) > 100.0) {
             this.spectralWidth = solveSpectralWidthMax(fov);
             amplitude = this.spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
             testSpectralWidth = false;
@@ -591,7 +592,7 @@ public class Gradient {
         txBandwidth = tx_bandwidth;
         this.sliceThicknessExcitation = slice_thickness_excitation;
         amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
-        if (amplitude > 100.0) {
+        if (Math.abs(amplitude) > 100.0) {
             sliceThicknessExcitation = ceilToSubDecimal(tx_bandwidth / ((GradientMath.GAMMA) * gMax), 6);
             amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
             testSliceThickness = false;
@@ -913,7 +914,7 @@ public class Gradient {
         }
         calculateStaticArea();
         double[] gradMaxMin = checkGradientMax();
-        if (gradMaxMin[0] > 100.0) {
+        if (Math.abs(gradMaxMin[0]) > 100.0) {
             amplitude = 100.0;
             spoilerExcess = gradMaxMin[0] - 100.0;
             minTopTime = ceilToSubDecimal((gradMaxMin[0] * equivalentTime - grad_shape_rise_time * 100.0) / 100.0, 5);

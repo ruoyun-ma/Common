@@ -43,7 +43,7 @@ public class Gradient2Event extends Gradient {
      */
     @Override
     public double prepareEquivalentTime() {
-        if (grad_shape_rise_time == Double.NaN) {
+        if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
         equivalentTime = grad_shape_rise_time;
@@ -73,7 +73,7 @@ public class Gradient2Event extends Gradient {
     }
 
     public boolean refocalizeGradientWithAmplitude(Gradient2Event grad, double ratio, double amplitude) {
-        if (grad_shape_rise_time == Double.NaN) {
+        if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
         staticArea = -grad.getStaticArea() * ratio;
