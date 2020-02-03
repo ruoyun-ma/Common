@@ -1,0 +1,93 @@
+Index: src/main/java/rs2d/sequence/common/Gradient.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/rs2d/sequence/common/Gradient.java	(date 1572555238000)
++++ src/main/java/rs2d/sequence/common/Gradient.java	(date 1575560331000)
+@@ -13,6 +13,7 @@
+ 
+ /**
+  * Class Gradient
++ * V2.8 abs Gmax  & G < -100
+  * V2.7 bug SE  RO prephasing bug
+  * V2.6 constructor with generatorSequenceParam .name() V2019.06
+  * V2.5- getNearestSW Sup Inf for Cam4
+@@ -62,7 +63,7 @@
+ 
+     protected Gradient gradFlowComp = null;
+ 
+-    protected static double gMax = GradientMath.getMaxGradientStrength();
++    protected static double gMax = Math.abs(GradientMath.getMaxGradientStrength());
+ 
+     public Gradient(Table amplitudeTab, Table flat_TimeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab) {
+         amplitudeTable = amplitudeTab;
+@@ -496,7 +497,7 @@
+         boolean testSpectralWidth = true;
+         this.spectralWidth = spectralWidth;
+         amplitude = spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
+-        if (amplitude > 100.0) {
++        if (Math.abs(amplitude) > 100.0) {
+             this.spectralWidth = solveSpectralWidthMax(fov);
+             amplitude = this.spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
+             testSpectralWidth = false;
+@@ -591,7 +592,7 @@
+         txBandwidth = tx_bandwidth;
+         this.sliceThicknessExcitation = slice_thickness_excitation;
+         amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
+-        if (amplitude > 100.0) {
++        if (Math.abs(amplitude) > 100.0) {
+             sliceThicknessExcitation = ceilToSubDecimal(tx_bandwidth / ((GradientMath.GAMMA) * gMax), 6);
+             amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
+             testSliceThickness = false;
+@@ -913,7 +914,7 @@
+         }
+         calculateStaticArea();
+         double[] gradMaxMin = checkGradientMax();
+-        if (gradMaxMin[0] > 100.0) {
++        if (Math.abs(gradMaxMin[0]) > 100.0) {
+             amplitude = 100.0;
+             spoilerExcess = gradMaxMin[0] - 100.0;
+             minTopTime = ceilToSubDecimal((gradMaxMin[0] * equivalentTime - grad_shape_rise_time * 100.0) / 100.0, 5);
+Index: src/main/java/rs2d/sequence/common/Gradient2Event.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/rs2d/sequence/common/Gradient2Event.java	(date 1572555238000)
++++ src/main/java/rs2d/sequence/common/Gradient2Event.java	(date 1575560331000)
+@@ -43,7 +43,7 @@
+      */
+     @Override
+     public double prepareEquivalentTime() {
+-        if (grad_shape_rise_time == Double.NaN) {
++        if (Double.isNaN(grad_shape_rise_time)) {
+             computeShapeRiseTime();
+         }
+         equivalentTime = grad_shape_rise_time;
+@@ -73,7 +73,7 @@
+     }
+ 
+     public boolean refocalizeGradientWithAmplitude(Gradient2Event grad, double ratio, double amplitude) {
+-        if (grad_shape_rise_time == Double.NaN) {
++        if (Double.isNaN(grad_shape_rise_time)) {
+             computeShapeRiseTime();
+         }
+         staticArea = -grad.getStaticArea() * ratio;
+Index: src/main/java/rs2d/sequence/common/Gradient5Event.java
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+--- src/main/java/rs2d/sequence/common/Gradient5Event.java	(date 1572555238000)
++++ src/main/java/rs2d/sequence/common/Gradient5Event.java	(date 1575560331000)
+@@ -72,8 +72,7 @@
+ //        System.out.println(" ");
+ //        System.out.println(" prepareEquivalentTime() ");
+ //        System.out.println(" flatTimeTable " + flatTimeTable1);
+-
+-        if (grad_shape_rise_time == Double.NaN) {
++        if (Double.isNaN(grad_shape_rise_time)) {
+             computeShapeRiseTime();
+         }
+         if (flatTimeTable1  != null) {

@@ -13,6 +13,7 @@ import rs2d.spinlab.tools.table.Order;
 
 /**
  * Class Gradient
+ * V2.9
  * V2.8 abs Gmax  & G < -100
  * V2.7 bug SE  RO prephasing bug
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
@@ -925,7 +926,7 @@ public class Gradient {
 
     public boolean addSpoiler(double pixel_dimension, double factor) {
         bStaticGradient = true;
-        double grad_area_spoiler = factor / ((GradientMath.GAMMA) * pixel_dimension);//GradientMath.GAMMA: gamma/2pi értéke Hz/T-ban
+        double grad_area_spoiler = factor / ((GradientMath.GAMMA) * pixel_dimension);//GradientMath.GAMMA: gamma/2pi  Hz/T-tour
         double grad_amp_spoiler = (grad_area_spoiler / equivalentTime) / gMax * 100.0;//
         return (addSpoiler(grad_amp_spoiler));
     }

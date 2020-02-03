@@ -1,5 +1,6 @@
 package rs2d.sequence.common;
 
+import rs2d.commons.log.Log;
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
 import rs2d.spinlab.instrument.Instrument;
 import rs2d.spinlab.instrument.InstrumentTxChannel;
@@ -24,6 +25,7 @@ import java.util.List;
 
 /**
  * Class RFPulse
+ * V2.9 SLR pulse & constructor V2019.06
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
  * V2.5- getNearestSW Sup Inf for Cam4
  * V2.3- 2019-06-06 JR
@@ -65,7 +67,11 @@ public class RFPulse {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    public RFPulse(Param attPar, Table amplitudeTab, Table phaseTab,
+    public RFPulse(){
+
+    }
+
+            public RFPulse(Param attPar, Table amplitudeTab, Table phaseTab,
                    Table timeTab, Shape shape, Shape shapePhase, Table offsetFreqTab) {
         amplitudeTable = amplitudeTab;
         attParam = attPar;
@@ -410,20 +416,20 @@ public class RFPulse {
      *
      * @param pulseName     :GAUSSIAN , SINC3 , SINC5 , HARD
      * @param numberOfPoint The number of point of the generated shape
-     * @param window
+     * @param type      or "90 degree" "Refocusing (spin-echo)"
      */
-    public void setShape(String pulseName, int numberOfPoint, String window) throws Exception {
+    public void setShape(String pulseName, int numberOfPoint, String type) throws Exception {
         shapePhase.clear();
         if ("GAUSSIAN".equalsIgnoreCase(pulseName)) {
             setShapeTableValuesFromGaussGen(shape, numberOfPoint, 0.250, 100, false);
         } else if ("SINC3".equalsIgnoreCase(pulseName)) {
-            setShapeTableValuesFromSincGen(shape, numberOfPoint, 2, 100, true, window);
+            setShapeTableValuesFromSincGen(shape, numberOfPoint, 2, 100, true, "Hamming");
             for (int i = 0; i < (numberOfPoint); i++) {
                 shapePhase.add((i < ((int) (numberOfPoint / 4.0)))
                         || (i >= ((int) (numberOfPoint * 3.0 / 4.0))) ? 180 : 0);
             }
         } else if ("SINC5".equalsIgnoreCase(pulseName)) {
-            setShapeTableValuesFromSincGen(shape, numberOfPoint, 3, 100, true, window);
+            setShapeTableValuesFromSincGen(shape, numberOfPoint, 3, 100, true, "Hamming");
             for (int i = 0; i < (numberOfPoint); i++) {
                 shapePhase.add(((i > ((int) (numberOfPoint * 1.0 / 6.0)) && (i <= ((int) (numberOfPoint * 2.0 / 6.0))))
                         || (i > ((int) (numberOfPoint * 4.0 / 6.0)) && (i <= ((int) (numberOfPoint * 5.0 / 6.0)))))
@@ -437,14 +443,12 @@ public class RFPulse {
             shapePhase.setFirst(0);
 
         } else if ("RAMP".equalsIgnoreCase(pulseName)) {
-
-            setTableValuesFromSincGenRamp(shape, numberOfPoint, 3, 100, true, window, 0.2);
-            setTableValuesFromSincGenRampPhase(shapePhase, numberOfPoint, 3, 100, true, window, 0.2);
+            setTableValuesFromSincGenRamp(shape, numberOfPoint, 3, 100, true, "Hamming", 0.2);
+            setTableValuesFromSincGenRampPhase(shapePhase, numberOfPoint, 3, 100, true, "Hamming", 0.2);
         } else if ("SLR_8_5152".equalsIgnoreCase(pulseName)) {
             shape.clear();
             shapePhase.clear();
             String bw = "8.5152";
-            String type = "90 degree";
             setTableValuesFromSLRGen(shape, numberOfPoint, 0, 0, type, true, bw);
             setTableValuesFromSLRPhaseGen(shapePhase, numberOfPoint, 0, 0, type, false, bw);
             isSlr = true;
@@ -453,7 +457,6 @@ public class RFPulse {
             shape.clear();
             shapePhase.clear();
             String bw = "4.2576";
-            String type = "90 degree";
             //type="Refocusing (spin-echo)";
             setTableValuesFromSLRGen(shape, numberOfPoint, 0, 0, type, true, bw);
             setTableValuesFromSLRPhaseGen(shapePhase, numberOfPoint, 0, 0, type, false, bw);
@@ -464,7 +467,11 @@ public class RFPulse {
 
     private void setTableValuesFromSLRGen(Table table, int nbpoint, int bw, double amp, String type, boolean abs, String bwstring) throws Exception {
         TableGeneratorInterface gen = null;
-        gen = loadTableGenerator("SLR");
+       gen = loadTableGenerator("SLR");
+        if  ( gen == null) {
+            System.out.println( " no SLR Generator instaled");
+            Log.error(getClass(), " no SLR Generator instaled" );
+        }
         gen.getParams().get(0).setValue(nbpoint);
         gen.getParams().get(1).setValue(bwstring);
         gen.getParams().get(2).setValue(amp);
@@ -483,6 +490,10 @@ public class RFPulse {
     private void setTableValuesFromSLRPhaseGen(Table table, int nbpoint, int bw, double amp, String type, boolean abs, String bwstring) throws Exception {
         TableGeneratorInterface gen = null;
         gen = loadTableGenerator("SLRPhase");
+        if  ( gen == null) {
+            System.out.println( " no SLR Generator instaled");
+            Log.error(getClass(), " no SLR Generator instaled" );
+        }
         gen.getParams().get(0).setValue(nbpoint);
         gen.getParams().get(1).setValue(bwstring);
         gen.getParams().get(2).setValue(amp);

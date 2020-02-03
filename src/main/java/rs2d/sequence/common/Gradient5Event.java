@@ -75,7 +75,7 @@ public class Gradient5Event extends Gradient {
         if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
-        if (flatTimeTable1  != null) {
+        if (flatTimeTable1 != null) {
 //            System.out.println("flatTimeTable.get(0).doubleValue()  = " + flatTimeTable.get(0).doubleValue());
 //            System.out.println("flatTimeTable1.get(0).doubleValue()  = " + flatTimeTable1.get(0).doubleValue());
 //            System.out.println("flatTimeTable3.get(0).doubleValue()  = " + flatTimeTable3.get(0).doubleValue());
