@@ -5,17 +5,19 @@ import rs2d.spinlab.sequence.Sequence;
 import rs2d.spinlab.sequence.table.Shape;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.tools.utility.Nucleus;
 
 /**
  * Class Gradient
+ * V2.9 with ratio for non proton
  * V2.3- 2019-06-06 JR from DW EPI
  * V2.1- 2018-03-20b JR
  */
 public class Gradient2Event extends Gradient {
 
     protected Gradient2Event gradFlowComp = null;
-
     protected static double gMax = GradientMath.getMaxGradientStrength();
+
 
     public Gradient2Event(Table amplitudeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab) {
         super(amplitudeTab, null, shapeUpTab, shapeDownTab, rampTimeUpTab, rampTimeDownTab);
@@ -30,6 +32,24 @@ public class Gradient2Event extends Gradient {
     public static Gradient2Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab) {
         return new Gradient2Event(sequence.getPublicTable(amplitudeTab.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
                 (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeUpTab.name()), sequence.getPublicTable(rampTimeDownTab.name()));
+    }
+
+
+//    For non proton
+    public Gradient2Event(Table amplitudeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab, Nucleus nucleus) {
+        super(amplitudeTab, null, shapeUpTab, shapeDownTab, rampTimeUpTab, rampTimeDownTab,nucleus);
+    }
+
+
+
+    public static Gradient2Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab, Nucleus nucleus)  {
+        return new Gradient2Event(sequence.getPublicTable(amplitudeTab.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeTab.name()), sequence.getPublicTable(rampTimeTab.name()),nucleus);
+    }
+
+    public static Gradient2Event createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab, Nucleus nucleus)  {
+        return new Gradient2Event(sequence.getPublicTable(amplitudeTab.name()), (Shape) sequence.getPublicTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getPublicTable(rampTimeUpTab.name()), sequence.getPublicTable(rampTimeDownTab.name()),nucleus);
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

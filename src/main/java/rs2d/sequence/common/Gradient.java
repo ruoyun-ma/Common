@@ -10,10 +10,11 @@ import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
+import rs2d.spinlab.tools.utility.Nucleus;
 
 /**
  * Class Gradient
- * V2.9
+ * V2.9 with ratio for non proton
  * V2.8 abs Gmax  & G < -100
  * V2.7 bug SE  RO prephasing bug
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
@@ -65,6 +66,7 @@ public class Gradient {
     protected Gradient gradFlowComp = null;
 
     protected static double gMax = Math.abs(GradientMath.getMaxGradientStrength());
+    Nucleus nucleus = Nucleus.H1;
 
     public Gradient(Table amplitudeTab, Table flat_TimeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab) {
         amplitudeTable = amplitudeTab;
@@ -76,6 +78,17 @@ public class Gradient {
         gMax = GradientMath.getMaxGradientStrength();
         init();
     }
+    public Gradient(Table amplitudeTab, Table flat_TimeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab, Nucleus nucleus) {
+        amplitudeTable = amplitudeTab;
+        flatTimeTable = flat_TimeTab;
+        shapeUpTable = shapeUpTab;
+        shapeDownTable = shapeDownTab;
+        rampTimeUpTable = rampTimeUpTab;
+        rampTimeDownTable = rampTimeDownTab;
+        gMax = GradientMath.getMaxGradientStrength();
+        this.nucleus = nucleus;
+        init();
+    }
 
     public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab) {
         return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
@@ -85,6 +98,16 @@ public class Gradient {
     public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab) {
         return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
                 (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getTable(rampTimeUpTab.name()), sequence.getTable(rampTimeDownTab.name()));
+    }
+    //non proton
+    public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeTab,Nucleus nucleus) {
+        return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getTable(rampTimeTab.name()), sequence.getTable(rampTimeTab.name()),nucleus);
+    }
+
+    public static Gradient createGradient(Sequence sequence, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum flat_TimeTab, GeneratorSequenceParamEnum shapeUpTab, GeneratorSequenceParamEnum shapeDownTab, GeneratorSequenceParamEnum rampTimeUpTab, GeneratorSequenceParamEnum rampTimeDownTab,Nucleus nucleus) {
+        return new Gradient(sequence.getPublicTable(amplitudeTab.name()), sequence.getTable(flat_TimeTab.name()), (Shape) sequence.getTable(shapeUpTab.name()),
+                (Shape) sequence.getPublicTable(shapeDownTab.name()), sequence.getTable(rampTimeUpTab.name()), sequence.getTable(rampTimeDownTab.name()),nucleus);
     }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -497,10 +520,10 @@ public class Gradient {
     public boolean calculateReadoutGradient(double spectralWidth, double fov) throws Exception {
         boolean testSpectralWidth = true;
         this.spectralWidth = spectralWidth;
-        amplitude = spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
+        amplitude = spectralWidth / ((GradientMath.GAMMA / nucleus.getRatio()) * fov) * 100.0 / gMax;                 // amplitude in T/m
         if (Math.abs(amplitude) > 100.0) {
             this.spectralWidth = solveSpectralWidthMax(fov);
-            amplitude = this.spectralWidth / ((GradientMath.GAMMA) * fov) * 100.0 / gMax;                 // amplitude in T/m
+            amplitude = this.spectralWidth / ((GradientMath.GAMMA / nucleus.getRatio()) * fov) * 100.0 / gMax;                 // amplitude in T/m
             testSpectralWidth = false;
         }
         calculateStaticArea();
@@ -592,10 +615,10 @@ public class Gradient {
         boolean testSliceThickness = true;
         txBandwidth = tx_bandwidth;
         this.sliceThicknessExcitation = slice_thickness_excitation;
-        amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
+        amplitude = (tx_bandwidth / ((GradientMath.GAMMA / nucleus.getRatio()) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
         if (Math.abs(amplitude) > 100.0) {
-            sliceThicknessExcitation = ceilToSubDecimal(tx_bandwidth / ((GradientMath.GAMMA) * gMax), 6);
-            amplitude = (tx_bandwidth / ((GradientMath.GAMMA) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
+            sliceThicknessExcitation = ceilToSubDecimal(tx_bandwidth / ((GradientMath.GAMMA / nucleus.getRatio()) * gMax), 6);
+            amplitude = (tx_bandwidth / ((GradientMath.GAMMA / nucleus.getRatio()) * sliceThicknessExcitation)) * 100.0 / gMax;                 // amplitude in T/m
             testSliceThickness = false;
         }
         calculateStaticArea();
@@ -718,7 +741,7 @@ public class Gradient {
     }
 
     public double prepPhaseGradTotalArea(int matrixDimension, double fovPhase) {
-        return ((matrixDimension - 1) / ((GradientMath.GAMMA) * fovPhase)) * 100.0 / gMax;
+        return ((matrixDimension - 1) / ((GradientMath.GAMMA / nucleus.getRatio()) * fovPhase)) * 100.0 / gMax;
     }
 
     public double prepPhaseGradIndexMax(boolean isKSCentred) {
@@ -926,7 +949,7 @@ public class Gradient {
 
     public boolean addSpoiler(double pixel_dimension, double factor) {
         bStaticGradient = true;
-        double grad_area_spoiler = factor / ((GradientMath.GAMMA) * pixel_dimension);//GradientMath.GAMMA: gamma/2pi  Hz/T-tour
+        double grad_area_spoiler = factor / ((GradientMath.GAMMA / nucleus.getRatio()) * pixel_dimension);//GradientMath.GAMMA: gamma/2pi  Hz/T-tour
         double grad_amp_spoiler = (grad_area_spoiler / equivalentTime) / gMax * 100.0;//
         return (addSpoiler(grad_amp_spoiler));
     }
