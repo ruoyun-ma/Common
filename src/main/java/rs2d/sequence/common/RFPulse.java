@@ -25,6 +25,7 @@ import java.util.List;
 
 /**
  * Class RFPulse
+ * V2.10 correct RF calib
  * V2.9 SLR pulse & constructor V2019.06
  * V2.6 constructor with generatorSequenceParam .name() V2019.06
  * V2.5- getNearestSW Sup Inf for Cam4
@@ -67,11 +68,11 @@ public class RFPulse {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    public RFPulse(){
+    public RFPulse() {
 
     }
 
-            public RFPulse(Param attPar, Table amplitudeTab, Table phaseTab,
+    public RFPulse(Param attPar, Table amplitudeTab, Table phaseTab,
                    Table timeTab, Shape shape, Shape shapePhase, Table offsetFreqTab) {
         amplitudeTable = amplitudeTab;
         attParam = attPar;
@@ -222,7 +223,7 @@ public class RFPulse {
         }
         // Calculate amp with the new and real Att
         tx_amp90 = calculateTxAmp90(txCh);
-        tx_amp180 = attParamTxAmp180(txCh);
+        tx_amp180 = calculateTxAmp180(txCh);
         tx_amp = tx_amp90 * flipAngle / 90;
         setSequenceTableSingleValue(amplitudeTable, tx_amp);
         attParam.setValue(txAtt);
@@ -287,7 +288,10 @@ public class RFPulse {
      * @param txCh
      * @return tx_amp
      */
-    private double attParamTxAmp180(InstrumentTxChannel txCh) {
+    private double calculateTxAmp180(InstrumentTxChannel txCh) {
+    	if (txAtt == -1) {
+            txAtt = (int) attParam.getValue();
+        }
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
@@ -363,8 +367,21 @@ public class RFPulse {
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
 
         double tx_amp_180_desired = amp;     // set 180° RF puse arround 80% of Chameleon output
-        txAtt = 1 + (int) TxMath.getTxAttFor(powerPulse, txCh, tx_amp_180_desired, observeFrequency);
+
+        try {
+            // available after V1.214
+            txAtt = 1 + (int) TxMath.getTxAttFor(powerPulse, txCh, tx_amp_180_desired, observeFrequency);
+
+            txAtt = txAtt > 63 ?63 : txAtt;
+            System.out.println(" txAtt " + txAtt);
+
+        } catch (Exception e) {
+            System.out.println(" Tx att too high reduce it to 63 ");
+            Log.info(getClass(), " Tx att too high reduce it to 63 ");
+            txAtt = 63;
+        }
         attParam.setValue(txAtt);
+
         return txAtt;
     }
 
@@ -380,8 +397,8 @@ public class RFPulse {
         }
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
-        tx_amp180 = attParamTxAmp180(txCh);
-        tx_amp = (flipAngle < 135 ? tx_amp90 : tx_amp180) * flipAngle / (flipAngle < 135 ? 90 : 180);
+        tx_amp180 = calculateTxAmp180(txCh);
+        tx_amp = TxMath.getTxAmpFor(powerPulse, txCh, txAtt, observeFrequency);
         setSequenceTableSingleValue(amplitudeTable, tx_amp);
         return tx_amp;
     }
@@ -398,7 +415,7 @@ public class RFPulse {
         }
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
-        tx_amp180 = attParamTxAmp180(txCh);
+        tx_amp180 = calculateTxAmp180(txCh);
         setSequenceTableValues(amplitudeTable, order);
         for (int i = 0; i < FA_list.length; i++) {
             tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
@@ -416,7 +433,7 @@ public class RFPulse {
      *
      * @param pulseName     :GAUSSIAN , SINC3 , SINC5 , HARD
      * @param numberOfPoint The number of point of the generated shape
-     * @param type      or "90 degree" "Refocusing (spin-echo)"
+     * @param type          or "90 degree" "Refocusing (spin-echo)"
      */
     public void setShape(String pulseName, int numberOfPoint, String type) throws Exception {
         shapePhase.clear();
@@ -467,10 +484,10 @@ public class RFPulse {
 
     private void setTableValuesFromSLRGen(Table table, int nbpoint, int bw, double amp, String type, boolean abs, String bwstring) throws Exception {
         TableGeneratorInterface gen = null;
-       gen = loadTableGenerator("SLR");
-        if  ( gen == null) {
-            System.out.println( " no SLR Generator instaled");
-            Log.error(getClass(), " no SLR Generator instaled" );
+        gen = loadTableGenerator("SLR");
+        if (gen == null) {
+            System.out.println(" no SLR Generator instaled");
+            Log.error(getClass(), " no SLR Generator instaled");
         }
         gen.getParams().get(0).setValue(nbpoint);
         gen.getParams().get(1).setValue(bwstring);
@@ -490,9 +507,9 @@ public class RFPulse {
     private void setTableValuesFromSLRPhaseGen(Table table, int nbpoint, int bw, double amp, String type, boolean abs, String bwstring) throws Exception {
         TableGeneratorInterface gen = null;
         gen = loadTableGenerator("SLRPhase");
-        if  ( gen == null) {
-            System.out.println( " no SLR Generator instaled");
-            Log.error(getClass(), " no SLR Generator instaled" );
+        if (gen == null) {
+            System.out.println(" no SLR Generator instaled");
+            Log.error(getClass(), " no SLR Generator instaled");
         }
         gen.getParams().get(0).setValue(nbpoint);
         gen.getParams().get(1).setValue(bwstring);

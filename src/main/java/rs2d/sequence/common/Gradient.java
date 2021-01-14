@@ -11,9 +11,11 @@ import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
 import rs2d.spinlab.tools.utility.Nucleus;
+import java.util.ArrayList;
 
 /**
  * Class Gradient
+ * V2.10 Traj
  * V2.9 with ratio for non proton
  * V2.8 abs Gmax  & G < -100
  * V2.7 bug SE  RO prephasing bug
@@ -832,6 +834,31 @@ public class Gradient {
                 amplitudeArray[i] = -amplitudeArray[i];
             }
         }
+    }
+
+
+
+    //    Extract traj ordering from traj list
+    public void reoderPhaseEncodingTraj2D(ArrayList<Integer> traj) {
+        double[] newTable = new double[traj.size() / 2];
+        System.out.println("traj.size() " + traj.size());
+        for (int j = 0; j < traj.size() / 2; j++) {
+            newTable[j] = amplitudeArray[traj.get(j * 2).intValue()];
+        }
+        amplitudeArray = newTable;
+        steps = traj.size() / 2;
+
+    }
+
+    //    Extract traj ordering from traj list
+    public void reoderPhaseEncodingTraj3D(ArrayList<Integer> traj) {
+        double[] newTable = new double[traj.size() / 2];
+        System.out.println("traj.size() " + traj.size());
+        for (int j = 0; j < traj.size() / 2; j++) {
+            newTable[j] = amplitudeArray[traj.get(j * 2 + 1).intValue()];
+        }
+        amplitudeArray = newTable;
+        steps = traj.size() / 2;
     }
 
 

@@ -1,29 +1,63 @@
 package rs2d.sequence.common;
 
-import rs2d.sequence.spinecho.S;
-import rs2d.sequence.spinecho.U;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
+import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.sequenceGenerator.util.Hardware;
 import rs2d.spinlab.tools.role.RoleEnum;
 import rs2d.spinlab.tools.table.Order;
 
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import static rs2d.sequence.spinecho.U.*;
 
 /**
  * Abstract Class SeqPrep
  * prep common functions
  * V1.1- 2021-1-11 XG
+ *
+ * one have to change address of the U & S from the local sequence manually
+ * TODO: Fix this dependency
  */
+//import static rs2d.sequence.spinecho.U.*;
+//import rs2d.sequence.spinecho.S;
+//import rs2d.sequence.spinecho.U;
 
 public abstract class SeqPrep extends BaseSequenceGenerator {
+    // private params
     private double fovPhase;
     private int userMatrixDimension2D;
-    protected String seqName;
-    protected String seqVersion;
-    public SeqPrep(){
+
+    // U params
+    protected GeneratorParamEnum FOV_SQUARE;
+    protected GeneratorParamEnum FIELD_OF_VIEW;
+    protected GeneratorParamEnum FIELD_OF_VIEW_PHASE;
+    protected GeneratorParamEnum PHASE_FIELD_OF_VIEW_RATIO;
+    protected GeneratorParamEnum FOV_RATIO_PHASE;
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_1D;
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_2D;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Z;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Y;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_X;
+    protected GeneratorParamEnum MULTI_PLANAR_EXCITATION;
+    protected GeneratorParamEnum IMAGE_ORIENTATION_SUBJECT;
+    protected GeneratorParamEnum SWITCH_READ_PHASE;
+
+    public SeqPrep(Class<? extends Enum> userParamClass){
+        FOV_SQUARE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_SQUARE");
+        FIELD_OF_VIEW = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW");
+        FIELD_OF_VIEW_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW_PHASE");
+        PHASE_FIELD_OF_VIEW_RATIO = (GeneratorParamEnum) Enum.valueOf(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
+        FOV_RATIO_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_RATIO_PHASE");
+        USER_MATRIX_DIMENSION_1D = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_1D");
+        USER_MATRIX_DIMENSION_2D = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_2D");
+        OFF_CENTER_FIELD_OF_VIEW_Z = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
+        OFF_CENTER_FIELD_OF_VIEW_Y = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
+        OFF_CENTER_FIELD_OF_VIEW_X = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
+        MULTI_PLANAR_EXCITATION = (GeneratorParamEnum) Enum.valueOf(userParamClass, "MULTI_PLANAR_EXCITATION");
+        IMAGE_ORIENTATION_SUBJECT = (GeneratorParamEnum) Enum.valueOf(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
+        SWITCH_READ_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "SWITCH_READ_PHASE");
     }
 
 
@@ -49,7 +83,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         }
     }
 
-    protected int[] satBandPrep(U satbandOrientation, U orientation, U imageOrientationSubject) {
+    protected int[] satBandPrep(GeneratorParamEnum satbandOrientation, GeneratorParamEnum orientation, GeneratorParamEnum imageOrientationSubject) {
         int[] position_sli_ph_rea = new int[6];
 
         boolean cranial = false;
@@ -234,7 +268,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         return position_sli_ph_rea;
     }
 
-    protected double getTx_bandwidth_factor(U tx_shape, U tx_bandwith_factor_param, U tx_bandwith_factor_param3d) {
+    protected double getTx_bandwidth_factor(GeneratorParamEnum tx_shape, GeneratorParamEnum tx_bandwith_factor_param, GeneratorParamEnum tx_bandwith_factor_param3d) {
         double tx_bandwidth_factor;
 
         List<Double> tx_bandwith_factor_table = getListDouble(tx_bandwith_factor_param);
@@ -284,7 +318,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         return Math.round(numberToBeRounded * Math.pow(10, order)) / Math.pow(10, order);
     }
 
-    protected Table setSequenceTableValues(S tableName, Order order, double... values) {
+    protected Table setSequenceTableValues(GeneratorSequenceParamEnum tableName, Order order, double... values) {
         Table table = getSequenceTable(tableName);
         table.clear();
         table.setOrder(order);
@@ -402,16 +436,92 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         return Collections.singletonList(RoleEnum.User);
     }
 
-    //<editor-fold defaultstate="collapsed" desc="Generated Code (RS2D)">
-    protected void addUserParams() {
-        addMissingUserParams(U.values());
+    /**
+     * From 2D x 3D matrix, return the indices of the scaned PE within elliptic: corner not scans
+     *
+     * @param matrixDimension2D : 2D dimension
+     * @param matrixDimension3D : 2D dimension
+     * @param isKSCentred       : true : symetric k'space around zero; false: always go trough k0
+     * @return matrix with coordinate of the sampled points: [k2D0, k3D0,     k2D1, k3D1,     k2D2, k3D2,     k2D3, k3D3    ..... ]
+     */
+    protected ArrayList<Integer> trajEllipticTableBuilder(int matrixDimension2D, int matrixDimension3D, boolean isKSCentred) {
+        double Center2D, Center3D;
+        if (isKSCentred) {
+            Center2D = 1 / 2.0;// symetric k'space around zero
+            Center3D = 1 / 2.0;// symetric k'space around zero
+        } else {
+            Center2D = 1 / 2.0 + ((matrixDimension2D + 1) % 2) / (2.0 * ((float) matrixDimension2D - 1));// always go trough k0
+            Center3D = 1 / 2.0 + ((matrixDimension3D + 1) % 2) / (2.0 * ((float) matrixDimension3D - 1));// always go trough k0
+        }
+        Center2D *= matrixDimension2D;
+        Center3D *= matrixDimension3D;
+
+        ArrayList<Integer> position = new ArrayList<>();
+        for (int j = 0; j < matrixDimension2D; j++) {
+            for (int k = 0; k < matrixDimension3D; k++) {
+                if (Math.pow((j - Center2D) / Center2D, 2) + Math.pow((k - Center3D) / Center3D, 2) < 1.0) {
+                    position.add(j);
+                    position.add(k);
+                }
+            }
+        }
+        return position;
     }
 
-    public String getName() {
-        return seqName;
-    }
-
-    public String getVersion() {
-        return seqVersion;
+    /**
+     * In Cam3
+     * Split the traj table into 2D and 3D scans, according to memory limitation,
+     * NTraj + dummy = 2D * 3D
+     * will find the 2D, 3D couple that generates the least number of dummies
+     * the Dummy are added at the end of traj
+     * note: 2048 Gradient table split in 2 x 1024 when updatedim == true
+     *
+     * In Cam4
+     * Memory is increased
+     * no split is allowed anymore
+     *
+     * @param limMin2D min number of nb_2D
+     * @param limMax2D max number of nb_2D
+     * @param traj     table with indices in
+     * @return int[3] = nb_2D ,nb_3D, nd_dummy
+     */
+    protected int[] getNbScans2D3DForUpdateDimension(int limMin2D, int limMax2D, ArrayList<Integer> traj) throws Exception {
+        int[] nb2D_3D_Dummy = new int[3];
+        int nbPE = traj.size() / 2;
+        if (Hardware.getSequenceCompiler().getVersionID() < 1303) {
+            if (nbPE > 2 * limMax2D) {   //  << Todo exact number of gradient left
+                int tmp22 = limMax2D;
+                int newNbPE = 0;
+                for (int i = limMin2D; i < limMax2D; i++) {
+                    int tmpAdditionnalDummy = (int) Math.ceil(nbPE * 1f / (i)) * i - nbPE;
+                    //  System.out.println(i+"  "+ tmpAdditionnalDummy+"   "+(int) Math.ceil(totalAcquisitionSpoke * 1f / (i)) * i+"   "+(int) Math.ceil(totalAcquisitionSpoke * 1f / (i)) * i);
+                    if (tmpAdditionnalDummy <= tmp22) {
+                        tmp22 = tmpAdditionnalDummy;
+                        newNbPE = (int) Math.ceil(nbPE * 1f / (i)) * i;
+                        nb2D_3D_Dummy[0] = i;
+                    }
+                }
+                nb2D_3D_Dummy[2] = newNbPE - nbPE;
+                nbPE = newNbPE;
+                nb2D_3D_Dummy[1] = newNbPE / nb2D_3D_Dummy[0];
+                for (int i = 0; i < nb2D_3D_Dummy[2]; i++) {
+                    System.out.println(" Add  additionnalDummy " + nb2D_3D_Dummy[2]);
+                    traj.add(traj.get(traj.size() - 1));
+                    traj.add(traj.get(traj.size() - 1));
+                }
+            } else {
+                nb2D_3D_Dummy[0] = nbPE;
+                nb2D_3D_Dummy[1] = 1;
+            }
+        }else{
+            if (nbPE > 2 * limMax2D){
+                System.out.println(" Error: nbPE is larger than limMax2D in Cam4");
+                throw new Exception("ERROR: Memory overflow! nbPE is larger than limMax2D");
+            }else{
+                nb2D_3D_Dummy[0] = nbPE;
+                nb2D_3D_Dummy[1] = 1;
+            }
+        }
+        return nb2D_3D_Dummy;
     }
 }
