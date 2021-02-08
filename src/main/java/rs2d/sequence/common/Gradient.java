@@ -12,6 +12,7 @@ import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
 import rs2d.spinlab.tools.utility.Nucleus;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class Gradient
@@ -861,6 +862,30 @@ public class Gradient {
         steps = traj.size() / 2;
     }
 
+    //    Extract traj ordering from traj list of plugin
+    public void reoderPhaseEncodingTraj2D(TransformPlugin plugin) {
+        int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
+        double[] newTable = new double[traj.length / 2];
+        System.out.println("traj.size() " + traj.length);
+        for (int j = 0; j < traj.length / 2; j++) {
+            newTable[j] = amplitudeArray[traj[j * 2]];
+        }
+        amplitudeArray = newTable;
+        steps = traj.length / 2;
+
+    }
+
+    //    Extract traj ordering from traj list of plugin
+    public void reoderPhaseEncodingTraj3D(TransformPlugin plugin) {
+        int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
+        double[] newTable = new double[traj.length / 2];
+        System.out.println("traj.size() " + traj.length);
+        for (int j = 0; j < traj.length / 2; j++) {
+            newTable[j] = amplitudeArray[traj[j * 2 + 1]];
+        }
+        amplitudeArray = newTable;
+        steps = traj.length / 2;
+    }
 
     public void reoderPhaseEncoding(TransformPlugin plugin, int echoTrainLength, int acquisitionMatrixDimension2D, int acquisitionMatrixDimension1D) {
         // flow Comp

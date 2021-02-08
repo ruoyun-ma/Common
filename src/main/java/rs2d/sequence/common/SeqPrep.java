@@ -30,34 +30,34 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     private int userMatrixDimension2D;
 
     // U params
-    protected GeneratorParamEnum FOV_SQUARE;
-    protected GeneratorParamEnum FIELD_OF_VIEW;
-    protected GeneratorParamEnum FIELD_OF_VIEW_PHASE;
-    protected GeneratorParamEnum PHASE_FIELD_OF_VIEW_RATIO;
-    protected GeneratorParamEnum FOV_RATIO_PHASE;
-    protected GeneratorParamEnum USER_MATRIX_DIMENSION_1D;
-    protected GeneratorParamEnum USER_MATRIX_DIMENSION_2D;
-    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Z;
-    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Y;
-    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_X;
-    protected GeneratorParamEnum MULTI_PLANAR_EXCITATION;
-    protected GeneratorParamEnum IMAGE_ORIENTATION_SUBJECT;
-    protected GeneratorParamEnum SWITCH_READ_PHASE;
+    protected GeneratorParamEnum fov_square;
+    protected GeneratorParamEnum field_of_view;
+    protected GeneratorParamEnum field_of_view_phase;
+    protected GeneratorParamEnum phase_field_of_view_ratio;
+    protected GeneratorParamEnum fov_ratio_phase;
+    protected GeneratorParamEnum user_matrix_dimension_1d;
+    protected GeneratorParamEnum user_matrix_dimension_2d;
+    protected GeneratorParamEnum off_center_field_of_view_z;
+    protected GeneratorParamEnum off_center_field_of_view_y;
+    protected GeneratorParamEnum off_center_field_of_view_x;
+    protected GeneratorParamEnum multi_planar_excitation;
+    protected GeneratorParamEnum image_orientation_subject;
+    protected GeneratorParamEnum switch_read_phase;
 
     public SeqPrep(Class<? extends Enum> userParamClass){
-        FOV_SQUARE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_SQUARE");
-        FIELD_OF_VIEW = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW");
-        FIELD_OF_VIEW_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW_PHASE");
-        PHASE_FIELD_OF_VIEW_RATIO = (GeneratorParamEnum) Enum.valueOf(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
-        FOV_RATIO_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_RATIO_PHASE");
-        USER_MATRIX_DIMENSION_1D = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_1D");
-        USER_MATRIX_DIMENSION_2D = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_2D");
-        OFF_CENTER_FIELD_OF_VIEW_Z = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
-        OFF_CENTER_FIELD_OF_VIEW_Y = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
-        OFF_CENTER_FIELD_OF_VIEW_X = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
-        MULTI_PLANAR_EXCITATION = (GeneratorParamEnum) Enum.valueOf(userParamClass, "MULTI_PLANAR_EXCITATION");
-        IMAGE_ORIENTATION_SUBJECT = (GeneratorParamEnum) Enum.valueOf(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
-        SWITCH_READ_PHASE = (GeneratorParamEnum) Enum.valueOf(userParamClass, "SWITCH_READ_PHASE");
+        fov_square = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_SQUARE");
+        field_of_view = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW");
+        field_of_view_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW_PHASE");
+        phase_field_of_view_ratio = (GeneratorParamEnum) Enum.valueOf(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
+        fov_ratio_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_RATIO_PHASE");
+        user_matrix_dimension_1d = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_1D");
+        user_matrix_dimension_2d = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_2D");
+        off_center_field_of_view_z = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
+        off_center_field_of_view_y = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
+        off_center_field_of_view_x = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
+        multi_planar_excitation = (GeneratorParamEnum) Enum.valueOf(userParamClass, "MULTI_PLANAR_EXCITATION");
+        image_orientation_subject = (GeneratorParamEnum) Enum.valueOf(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
+        switch_read_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "SWITCH_READ_PHASE");
     }
 
 
@@ -65,11 +65,11 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     //                  general  methodes
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     public void prepareFovPhase() {
-        fovPhase = (getBoolean(FOV_SQUARE)) ? getDouble(FIELD_OF_VIEW) : getDouble(FIELD_OF_VIEW_PHASE);
-        fovPhase = fovPhase > getDouble(FIELD_OF_VIEW) ? getDouble(FIELD_OF_VIEW) : fovPhase;
-        getParam(FIELD_OF_VIEW_PHASE).setValue(fovPhase);
-        getParam(PHASE_FIELD_OF_VIEW_RATIO).setValue((fovPhase / getDouble(FIELD_OF_VIEW) * 100.0));    // FOV ratio for display
-        getParam(FOV_RATIO_PHASE).setValue(Math.round(fovPhase / getDouble(FIELD_OF_VIEW) * 100.0));    // FOV ratio for display
+        fovPhase = (getBoolean(fov_square)) ? getDouble(field_of_view) : getDouble(field_of_view_phase);
+        fovPhase = fovPhase > getDouble(field_of_view) ? getDouble(field_of_view) : fovPhase;
+        getParam(field_of_view_phase).setValue(fovPhase);
+        getParam(phase_field_of_view_ratio).setValue((fovPhase / getDouble(field_of_view) * 100.0));    // FOV ratio for display
+        getParam(fov_ratio_phase).setValue(Math.round(fovPhase / getDouble(field_of_view) * 100.0));    // FOV ratio for display
     }
 
     protected int floorEven(double value) {
@@ -78,8 +78,8 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
 
     protected void setSquarePixel(boolean square) {
         if (square) {
-            this.userMatrixDimension2D = (int) Math.round(getInt(USER_MATRIX_DIMENSION_1D) * fovPhase / getDouble(FIELD_OF_VIEW));
-            getParam(USER_MATRIX_DIMENSION_2D).setValue(this.userMatrixDimension2D);
+            this.userMatrixDimension2D = (int) Math.round(getInt(user_matrix_dimension_1d) * fovPhase / getDouble(field_of_view));
+            getParam(user_matrix_dimension_2d).setValue(this.userMatrixDimension2D);
         }
     }
 
@@ -254,7 +254,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
             // System.out.println("read+ "+position_sli_ph_rea[4]+" phase+ "+position_sli_ph_rea[2]+" slice+ "+position_sli_ph_rea[0]);
             // System.out.println("read- "+position_sli_ph_rea[5]+" phase- "+position_sli_ph_rea[3]+" slice- "+position_sli_ph_rea[1]);
         }
-        boolean is_switch = getBoolean(SWITCH_READ_PHASE);
+        boolean is_switch = getBoolean(switch_read_phase);
         boolean phase_pos_temp = position_sli_ph_rea[2] == 1;
         boolean phase_neg_temp = position_sli_ph_rea[3] == 1;
         boolean read_pos_temp = position_sli_ph_rea[4] == 1;
@@ -274,7 +274,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         List<Double> tx_bandwith_factor_table = getListDouble(tx_bandwith_factor_param);
         List<Double> tx_bandwith_factor_3D_table = getListDouble(tx_bandwith_factor_param3d);
 
-        if (getBoolean(MULTI_PLANAR_EXCITATION)) {
+        if (getBoolean(multi_planar_excitation)) {
             if ("GAUSSIAN".equalsIgnoreCase(getText(tx_shape))) {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(1);
             } else if ("SINC3".equalsIgnoreCase(getText(tx_shape))) {
@@ -331,7 +331,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     }
 
     protected double getOff_center_distance_1D_2D_3D(int dim) {
-        List<Double> image_orientation = getListDouble(IMAGE_ORIENTATION_SUBJECT);
+        List<Double> image_orientation = getListDouble(image_orientation_subject);
         double[] direction_index = new double[9];
         direction_index[0] = image_orientation.get(0);
         direction_index[1] = image_orientation.get(1);
@@ -348,9 +348,9 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         double norm_vector_slice = Math.sqrt(Math.pow(direction_index[6], 2) + Math.pow(direction_index[7], 2) + Math.pow(direction_index[8], 2));
 
         //Offset according to animal position
-        double off_center_distance_Z = getDouble(OFF_CENTER_FIELD_OF_VIEW_Z);
-        double off_center_distance_Y = getDouble(OFF_CENTER_FIELD_OF_VIEW_Y);
-        double off_center_distance_X = getDouble(OFF_CENTER_FIELD_OF_VIEW_X);
+        double off_center_distance_Z = getDouble(off_center_field_of_view_z);
+        double off_center_distance_Y = getDouble(off_center_field_of_view_y);
+        double off_center_distance_X = getDouble(off_center_field_of_view_x);
 
         //Offset according to READ PHASE and SLICE
         double off_center_distance;
@@ -373,7 +373,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
 
     protected double getOff_center_distance_X_Y_Z(int dim, double off_center_distance_1D,
                                                 double off_center_distance_2D, double off_center_distance_3D) {
-        List<Double> image_orientation = getListDouble(IMAGE_ORIENTATION_SUBJECT);
+        List<Double> image_orientation = getListDouble(image_orientation_subject);
         double[] direction_index = new double[9];
         direction_index[0] = image_orientation.get(0);
         direction_index[1] = image_orientation.get(1);
