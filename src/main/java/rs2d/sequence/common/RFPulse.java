@@ -21,6 +21,7 @@ import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.table.Order;
 import rs2d.spinlab.tools.utility.Nucleus;
 
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -418,7 +419,12 @@ public class RFPulse {
         tx_amp180 = calculateTxAmp180(txCh);
         setSequenceTableValues(amplitudeTable, order);
         for (int i = 0; i < FA_list.length; i++) {
-            tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
+            if (Arrays.stream(FA_list).max().getAsDouble()>=135.0){
+                tx_amp = tx_amp180 * FA_list[i] / 180;
+            }else{
+                tx_amp = tx_amp90 * FA_list[i] / 90;
+            }
+            //tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
             amplitudeTable.add(tx_amp);
         }
         return tx_amp;
