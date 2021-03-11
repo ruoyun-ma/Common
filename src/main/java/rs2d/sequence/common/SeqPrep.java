@@ -1,14 +1,23 @@
 package rs2d.sequence.common;
 
+import com.sun.java.swing.plaf.windows.WindowsInternalFrameTitlePane;
+import com.sun.tools.javac.jvm.Gen;
+import rs2d.spinlab.instrument.Instrument;
+import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequence.table.Table;
+import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
 import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.sequenceGenerator.util.GradientRotation;
 import rs2d.spinlab.sequenceGenerator.util.Hardware;
 import rs2d.spinlab.tools.param.MriDefaultParams;
 import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.role.RoleEnum;
 import rs2d.spinlab.tools.table.Order;
+import rs2d.spinlab.tools.utility.GradientAxe;
+import rs2d.spinlab.tools.utility.Nucleus;
+import sun.security.provider.PolicyParser;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -19,6 +28,7 @@ import java.util.List;
  * prep common functions
  * V1.1- 2021-1-11 XG
  * V1.2- 2021-2-26 XG
+ * V1.3- 2021-3-10 XG
  * <p>
  * one have to change address of the U & S from the local sequence manually
  * TODO: Fix this dependency
@@ -31,15 +41,55 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     // private params
     private double fovPhase;
     private int userMatrixDimension2D;
+    private double off_center_distance_1D;
+    private double off_center_distance_2D;
+    private double off_center_distance_3D;
+
+
+    // protected params
+    protected Nucleus nucleus;
+    protected double protonFrequency;
+    protected double gMax;
+    protected double observeFrequency;
+    protected double min_time_per_acq_point;
+
+    protected boolean isMultiplanar;
+    protected boolean isKSCenterMode;
+    protected boolean isEnablePhase;
+    protected boolean isEnablePhase3D;
+    protected boolean isEnableSlice;
+    protected boolean isEnableRead;
+
 
     // U params
+    protected GeneratorParamEnum nucleus_1;
+    protected GeneratorParamEnum offset_freq_1;
+    protected GeneratorParamEnum base_freq_1;
+    protected GeneratorParamEnum receiver_gain;
+    protected GeneratorParamEnum receiver_count;
+    protected GeneratorParamEnum intermediate_frequency;
+    protected GeneratorParamEnum observed_frequency;
+    protected GeneratorParamEnum observed_nucleus;
+    protected GeneratorParamEnum ks_center_mode;
+    protected GeneratorParamEnum gradient_enable_phase_3d;
+    protected GeneratorParamEnum gradient_enable_phase;
+    protected GeneratorParamEnum gradient_enable_slice;
+    protected GeneratorParamEnum gradient_enable_read;
+    protected GeneratorParamEnum resolution_phase;
+    protected GeneratorParamEnum resolution_slice;
+
     protected GeneratorParamEnum fov_square;
     protected GeneratorParamEnum field_of_view;
     protected GeneratorParamEnum field_of_view_phase;
     protected GeneratorParamEnum phase_field_of_view_ratio;
     protected GeneratorParamEnum fov_ratio_phase;
+    protected GeneratorParamEnum slice_thickness;
     protected GeneratorParamEnum user_matrix_dimension_1d;
     protected GeneratorParamEnum user_matrix_dimension_2d;
+    protected GeneratorParamEnum user_matrix_dimension_3d;
+    protected GeneratorParamEnum acquisition_matrix_dimension_2d;
+    protected GeneratorParamEnum acquisition_matrix_dimension_3d;
+
     protected GeneratorParamEnum off_center_field_of_view_z;
     protected GeneratorParamEnum off_center_field_of_view_y;
     protected GeneratorParamEnum off_center_field_of_view_x;
@@ -47,23 +97,46 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     protected GeneratorParamEnum image_orientation_subject;
     protected GeneratorParamEnum switch_read_phase;
 
-    public SeqPrep(Class<? extends Enum> userParamClass) {
-        fov_square = initialize(userParamClass, "FOV_SQUARE");
-        field_of_view = initialize(userParamClass, "FIELD_OF_VIEW");
-        field_of_view_phase = initialize(userParamClass, "FIELD_OF_VIEW_PHASE");
-        phase_field_of_view_ratio = initialize(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
-        fov_ratio_phase = initialize(userParamClass, "FOV_RATIO_PHASE");
-        user_matrix_dimension_1d = initialize(userParamClass, "USER_MATRIX_DIMENSION_1D");
-        user_matrix_dimension_2d = initialize(userParamClass, "USER_MATRIX_DIMENSION_2D");
-        off_center_field_of_view_z = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
-        off_center_field_of_view_y = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
-        off_center_field_of_view_x = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
-        multi_planar_excitation = initialize(userParamClass, "MULTI_PLANAR_EXCITATION");
-        image_orientation_subject = initialize(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
-        switch_read_phase = initialize(userParamClass, "SWITCH_READ_PHASE");
+    protected SeqPrep(Class<? extends Enum> U) {
+        nucleus_1 = initialize(U, "NUCLEUS_1");
+        offset_freq_1 = initialize(U, "OFFSET_FREQ_1");
+        base_freq_1 = initialize(U,"BASE_FREQ_1");
+        receiver_gain = initialize(U, "RECEIVER_GAIN");
+        receiver_count = initialize(U, "RECEIVER_COUNT");
+        intermediate_frequency = initialize(U,"INTERMEDIATE_FREQUENCY");
+        observed_frequency = initialize(U,"OBSERVED_FREQUENCY");
+        observed_nucleus = initialize(U,"OBSERVED_NUCLEUS");
+
+        ks_center_mode = initialize(U, "KS_CENTER_MODE");
+        gradient_enable_phase_3d = initialize(U, "GRADIENT_ENABLE_PHASE_3D");
+        gradient_enable_phase = initialize(U, "GRADIENT_ENABLE_PHASE");
+        gradient_enable_slice = initialize(U, "GRADIENT_ENABLE_SLICE");
+        gradient_enable_read = initialize(U, "GRADIENT_ENABLE_READ");
+
+        resolution_phase = initialize(U, "RESOLUTION_PHASE");
+        resolution_slice = initialize(U, "RESOLUTION_SLICE");
+
+        fov_square = initialize(U, "FOV_SQUARE");
+        field_of_view = initialize(U, "FIELD_OF_VIEW");
+        field_of_view_phase = initialize(U, "FIELD_OF_VIEW_PHASE");
+        phase_field_of_view_ratio = initialize(U, "PHASE_FIELD_OF_VIEW_RATIO");
+        fov_ratio_phase = initialize(U, "FOV_RATIO_PHASE");
+        slice_thickness = initialize(U,"SLICE_THICKNESS");
+        user_matrix_dimension_1d = initialize(U, "USER_MATRIX_DIMENSION_1D");
+        user_matrix_dimension_2d = initialize(U, "USER_MATRIX_DIMENSION_2D");
+        user_matrix_dimension_3d = initialize(U, "USER_MATRIX_DIMENSION_3D");
+        acquisition_matrix_dimension_2d = initialize(U, "ACQUISITION_MATRIX_DIMENSION_2D");
+        acquisition_matrix_dimension_3d = initialize(U, "ACQUISITION_MATRIX_DIMENSION_3D");
+
+        off_center_field_of_view_z = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_Z");
+        off_center_field_of_view_y = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_Y");
+        off_center_field_of_view_x = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_X");
+        multi_planar_excitation = initialize(U, "MULTI_PLANAR_EXCITATION");
+        image_orientation_subject = initialize(U, "IMAGE_ORIENTATION_SUBJECT");
+        switch_read_phase = initialize(U, "SWITCH_READ_PHASE");
     }
 
-    public GeneratorParamEnum initialize(Class<? extends Enum> userParamClass, String inVar) {
+    protected GeneratorParamEnum initialize(Class<? extends Enum> userParamClass, String inVar) {
         GeneratorParamEnum outVar;
         try {
             outVar = (GeneratorParamEnum) Enum.valueOf(userParamClass, inVar);
@@ -72,11 +145,171 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         }
         return outVar;
     }
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //                  general  structure
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    public void generate() throws Exception {
+        initUserParam();
+        this.beforeRouting();
+        if (!this.isRouted()) {
+            this.route();
+            this.initAfterRouting();//init before setup
+        }
+        //   if (!getBoolean( SETUP_MODE)) {
+        this.afterRouting();    //avoid exception during setup
+        // }
+        this.checkAndFireException();
+    }
+
+    protected void initUserParam() {
+        isKSCenterMode = getBoolean(ks_center_mode);
+        isEnablePhase3D = !isKSCenterMode && getBoolean(gradient_enable_phase_3d);
+        isEnablePhase = !isKSCenterMode && getBoolean(gradient_enable_phase);
+        isEnableSlice = getBoolean(gradient_enable_slice);
+        isEnableRead = getBoolean(gradient_enable_read);
+        isMultiplanar = getBoolean(multi_planar_excitation);
+    }
+
+    protected void beforeRouting() throws Exception {}
+
+    protected void initAfterRouting() {}
+
+    protected void afterRouting() throws Exception {}
+
+    protected void checkAndFireException(){}
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    //                  general  methodes
+    //                  general  methods
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    public void prepareFovPhase() {
+    protected void iniTxRx(GeneratorSequenceParamEnum Rx_gain, GeneratorSequenceParamEnum Intermediate_frequency,
+                           GeneratorSequenceParamEnum Tx_frequency, GeneratorSequenceParamEnum Tx_nucleus) throws Exception {
+        nucleus = Nucleus.getNucleusForName(getText(nucleus_1));
+        protonFrequency = Instrument.instance().getDevices().getMagnet().getProtonFrequency();
+        observeFrequency = nucleus.getFrequency(protonFrequency) + getDouble(offset_freq_1);
+        getParam(base_freq_1).setValue(nucleus.getFrequency(protonFrequency));
+
+        min_time_per_acq_point = Hardware.getSequenceCompiler().getTransfertTimePerDataPt();
+        gMax = GradientMath.getMaxGradientStrength();
+
+        set(Rx_gain, receiver_gain);
+        getParam(receiver_count).setValue(Instrument.instance().getObservableRxs(nucleus).size());
+
+        set(Intermediate_frequency, Instrument.instance().getIfFrequency());
+        getParam(intermediate_frequency).setValue(Instrument.instance().getIfFrequency());
+
+        set(Tx_frequency, observeFrequency);
+        getParam(observed_frequency).setValue(observeFrequency);
+
+        set(Tx_nucleus, nucleus);
+        getParam(observed_nucleus).setValue(nucleus);
+    }
+
+    protected void iniImgOrientation(GeneratorSequenceParamEnum Gradient_axe_phase, GeneratorSequenceParamEnum Gradient_axe_read, GeneratorParamEnum SWITCH_READ_PHASE) {
+        //READ PHASE and SLICE matrix
+        off_center_distance_1D = getOff_center_distance_1D_2D_3D(1);
+        off_center_distance_2D = getOff_center_distance_1D_2D_3D(2);
+        off_center_distance_3D = getOff_center_distance_1D_2D_3D(3);
+
+        //Offset according to ENABLE READ PHASE and SLICE
+        off_center_distance_1D = !isEnableRead ? 0 : off_center_distance_1D;
+        off_center_distance_2D = !isEnablePhase ? 0 : off_center_distance_2D;
+
+        if (!isEnableSlice && isMultiplanar || !isEnablePhase3D) {
+            off_center_distance_3D = 0;
+        }
+
+        getParam(off_center_field_of_view_x).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(1, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+        getParam(off_center_field_of_view_y).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(2, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+        getParam(off_center_field_of_view_z).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(3, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+
+
+        boolean is_read_phase_inverted = getBoolean(SWITCH_READ_PHASE);
+        if (is_read_phase_inverted) {
+            set(Gradient_axe_phase, GradientAxe.R);
+            set(Gradient_axe_read, GradientAxe.P);
+            double off_center_distance_tmp = off_center_distance_2D;
+            off_center_distance_2D = off_center_distance_1D;
+            off_center_distance_1D = off_center_distance_tmp;
+        } else {
+            set(Gradient_axe_phase, GradientAxe.P);
+            set(Gradient_axe_read, GradientAxe.R);
+        }
+//        getParam(OFF_CENTER_FIELD_OF_VIEW_3D).setValue(off_center_distance_3D);
+//        getParam(OFF_CENTER_FIELD_OF_VIEW_2D).setValue(off_center_distance_2D);
+//        getParam(OFF_CENTER_FIELD_OF_VIEW_1D).setValue(off_center_distance_1D);
+
+        // -----------------------------------------------
+        // activate gradient rotation matrix
+        // -----------------------------------------------
+        GradientRotation.setSequenceGradientRotation(this);
+    }
+
+    protected void iniAcqMat() throws Exception {
+        getAcq1D();
+
+        // -----------------------------------------------
+        // 2nd D managment
+        // -----------------------------------------------
+        getAcq2D();
+
+        // -----------------------------------------------
+        // 3nd D managment
+        // -----------------------------------------------
+        getAcq3D();
+
+//        // -----------------------------------------------
+//        // 3D managment 2/2: MEMORY LIMITATION & Manage PE trajectory
+//        // -----------------------------------------------
+//        reprepAcq3D();
+
+        // -----------------------------------------------
+        // 4D managment:  Dynamic, MultiEcho, External triggering, Multi Echo
+        // -----------------------------------------------
+        getAcq4D();
+
+        // -----------------------------------------------
+        // Image Resolution
+        // -----------------------------------------------
+        getImgRes();
+    }
+
+    protected void getAcq1D() throws Exception {}
+
+    protected void getAcq2D() {}
+
+    protected void getAcq3D() {}
+
+    protected void regetAcq3D() {}
+
+    protected void getAcq4D() {}
+
+    protected void getImgRes() {
+        // PIXEL dimension calculation
+        double pixelDimensionPhase = fovPhase / getInt(acquisition_matrix_dimension_2d);
+        getParam(resolution_phase).setValue(pixelDimensionPhase); // phase true resolution for display
+
+        double pixel_dimension_3D;
+        if (isMultiplanar) {
+            pixel_dimension_3D = getDouble(slice_thickness);
+        } else {
+            pixel_dimension_3D = getDouble(slice_thickness) * getInt(user_matrix_dimension_3d) / getInt(acquisition_matrix_dimension_3d); //true resolution
+        }
+        getParam(resolution_slice).setValue(pixel_dimension_3D); // phase true resolution for display
+    }
+
+    protected double getGradEqRiseTime(GeneratorSequenceParamEnum Grad_shape_rise_up, GeneratorSequenceParamEnum Grad_shape_rise_down, double grad_rise_time) {
+        double grad_shape_rise_factor_up = Utility.voltageFillingFactor(getSequenceTable(Grad_shape_rise_up));
+        double grad_shape_rise_factor_down = Utility.voltageFillingFactor(getSequenceTable(Grad_shape_rise_down));
+
+        return grad_shape_rise_factor_up * grad_rise_time + grad_shape_rise_factor_down * grad_rise_time;        // shape dependant equivalent rise time
+    }
+
+    protected void getADC(GeneratorSequenceParamEnum Time_rx, GeneratorSequenceParamEnum LO_att, double observation_time) {
+        set(Time_rx, observation_time);
+        set(LO_att, Instrument.instance().getLoAttenuation());
+    }
+
+    protected void prepareFovPhase() {
         fovPhase = (getBoolean(fov_square)) ? getDouble(field_of_view) : getDouble(field_of_view_phase);
         fovPhase = fovPhase > getDouble(field_of_view) ? getDouble(field_of_view) : fovPhase;
         getParam(field_of_view_phase).setValue(fovPhase);
@@ -286,7 +519,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         List<Double> tx_bandwith_factor_table = getListDouble(tx_bandwith_factor_param);
         List<Double> tx_bandwith_factor_3D_table = getListDouble(tx_bandwith_factor_param3d);
 
-        if (getBoolean(multi_planar_excitation)) {
+        if (isMultiplanar) {
             if ("GAUSSIAN".equalsIgnoreCase(getText(tx_shape))) {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(1);
             } else if ("SINC3".equalsIgnoreCase(getText(tx_shape))) {
@@ -444,7 +677,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
         return new_divisor;
     }
 
-    public List<RoleEnum> getPluginAccess() {
+    protected List<RoleEnum> getPluginAccess() {
         return Collections.singletonList(RoleEnum.User);
     }
 
