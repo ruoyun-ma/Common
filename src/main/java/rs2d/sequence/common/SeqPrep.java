@@ -5,6 +5,8 @@ import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
 import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.sequenceGenerator.util.Hardware;
+import rs2d.spinlab.tools.param.MriDefaultParams;
+import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.role.RoleEnum;
 import rs2d.spinlab.tools.table.Order;
 
@@ -16,7 +18,8 @@ import java.util.List;
  * Abstract Class SeqPrep
  * prep common functions
  * V1.1- 2021-1-11 XG
- *
+ * V1.2- 2021-2-26 XG
+ * <p>
  * one have to change address of the U & S from the local sequence manually
  * TODO: Fix this dependency
  */
@@ -44,22 +47,31 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     protected GeneratorParamEnum image_orientation_subject;
     protected GeneratorParamEnum switch_read_phase;
 
-    public SeqPrep(Class<? extends Enum> userParamClass){
-        fov_square = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_SQUARE");
-        field_of_view = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW");
-        field_of_view_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FIELD_OF_VIEW_PHASE");
-        phase_field_of_view_ratio = (GeneratorParamEnum) Enum.valueOf(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
-        fov_ratio_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "FOV_RATIO_PHASE");
-        user_matrix_dimension_1d = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_1D");
-        user_matrix_dimension_2d = (GeneratorParamEnum) Enum.valueOf(userParamClass, "USER_MATRIX_DIMENSION_2D");
-        off_center_field_of_view_z = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
-        off_center_field_of_view_y = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
-        off_center_field_of_view_x = (GeneratorParamEnum) Enum.valueOf(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
-        multi_planar_excitation = (GeneratorParamEnum) Enum.valueOf(userParamClass, "MULTI_PLANAR_EXCITATION");
-        image_orientation_subject = (GeneratorParamEnum) Enum.valueOf(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
-        switch_read_phase = (GeneratorParamEnum) Enum.valueOf(userParamClass, "SWITCH_READ_PHASE");
+    public SeqPrep(Class<? extends Enum> userParamClass) {
+        fov_square = initialize(userParamClass, "FOV_SQUARE");
+        field_of_view = initialize(userParamClass, "FIELD_OF_VIEW");
+        field_of_view_phase = initialize(userParamClass, "FIELD_OF_VIEW_PHASE");
+        phase_field_of_view_ratio = initialize(userParamClass, "PHASE_FIELD_OF_VIEW_RATIO");
+        fov_ratio_phase = initialize(userParamClass, "FOV_RATIO_PHASE");
+        user_matrix_dimension_1d = initialize(userParamClass, "USER_MATRIX_DIMENSION_1D");
+        user_matrix_dimension_2d = initialize(userParamClass, "USER_MATRIX_DIMENSION_2D");
+        off_center_field_of_view_z = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Z");
+        off_center_field_of_view_y = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_Y");
+        off_center_field_of_view_x = initialize(userParamClass, "OFF_CENTER_FIELD_OF_VIEW_X");
+        multi_planar_excitation = initialize(userParamClass, "MULTI_PLANAR_EXCITATION");
+        image_orientation_subject = initialize(userParamClass, "IMAGE_ORIENTATION_SUBJECT");
+        switch_read_phase = initialize(userParamClass, "SWITCH_READ_PHASE");
     }
 
+    public GeneratorParamEnum initialize(Class<? extends Enum> userParamClass, String inVar) {
+        GeneratorParamEnum outVar;
+        try {
+            outVar = (GeneratorParamEnum) Enum.valueOf(userParamClass, inVar);
+        } catch (IllegalArgumentException exception) {
+            outVar = null;
+        }
+        return outVar;
+    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  general  methodes
@@ -372,7 +384,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
     }
 
     protected double getOff_center_distance_X_Y_Z(int dim, double off_center_distance_1D,
-                                                double off_center_distance_2D, double off_center_distance_3D) {
+                                                  double off_center_distance_2D, double off_center_distance_3D) {
         List<Double> image_orientation = getListDouble(image_orientation_subject);
         double[] direction_index = new double[9];
         direction_index[0] = image_orientation.get(0);
@@ -475,7 +487,7 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
      * will find the 2D, 3D couple that generates the least number of dummies
      * the Dummy are added at the end of traj
      * note: 2048 Gradient table split in 2 x 1024 when updatedim == true
-     *
+     * <p>
      * In Cam4
      * Memory is increased
      * no split is allowed anymore
@@ -513,11 +525,11 @@ public abstract class SeqPrep extends BaseSequenceGenerator {
                 nb2D_3D_Dummy[0] = nbPE;
                 nb2D_3D_Dummy[1] = 1;
             }
-        }else{
-            if (nbPE > 2 * limMax2D){
+        } else {
+            if (nbPE > 2 * limMax2D) {
                 System.out.println(" Error: nbPE is larger than limMax2D in Cam4");
                 throw new Exception("ERROR: Memory overflow! nbPE is larger than limMax2D");
-            }else{
+            } else {
                 nb2D_3D_Dummy[0] = nbPE;
                 nb2D_3D_Dummy[1] = 1;
             }

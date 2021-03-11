@@ -485,6 +485,11 @@ public class RFPulse {
             setTableValuesFromSLRPhaseGen(shapePhase, numberOfPoint, 0, 0, type, false, bw);
             isSlr = true;
             slrIndex = 1;
+        } else if ("TONE".equalsIgnoreCase(pulseName)) {
+            shape.clear();
+            shapePhase.clear();
+            setTableValuesFromToneGen(shape, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
+            setTableValuesFromTonePhaseGen(shapePhase, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
         }
     }
 
@@ -561,6 +566,47 @@ public class RFPulse {
         gen.getParams().get(3).setValue(abs);//abs
         gen.getParams().get(4).setValue(window);//abs
         gen.getParams().get(5).setValue(slope);
+
+        table.setGenerator(gen);
+        if (gen == null) {
+            table.clear();
+            table.setFirst(100);
+        } else {
+            gen.generate();
+        }
+    }
+
+    private void setTableValuesFromToneGen(Table table, int nbpoint, int nblobe, double amp, Boolean abs, String window, double slope, double slcborder) throws Exception {
+        TableGeneratorInterface gen = null;
+        gen = loadTableGenerator("Tone");
+        gen.getParams().get(0).setValue(nbpoint);
+        gen.getParams().get(1).setValue(nblobe);
+        gen.getParams().get(2).setValue(amp);
+        gen.getParams().get(3).setValue(abs);//abs
+        gen.getParams().get(4).setValue(window);//abs
+        gen.getParams().get(5).setValue(slope);
+        gen.getParams().get(6).setValue(slcborder);
+
+        table.setGenerator(gen);
+        if (gen == null) {
+            table.clear();
+            table.setFirst(100);
+        } else {
+            gen.generate();
+        }
+    }
+
+
+    private void setTableValuesFromTonePhaseGen(Table table, int nbpoint, int nblobe, double amp, Boolean abs, String window, double slope, double slcborder) throws Exception {
+        TableGeneratorInterface gen = null;
+        gen = loadTableGenerator("TonePhase");
+        gen.getParams().get(0).setValue(nbpoint);
+        gen.getParams().get(1).setValue(nblobe);
+        gen.getParams().get(2).setValue(amp);
+        gen.getParams().get(3).setValue(abs);//abs
+        gen.getParams().get(4).setValue(window);//abs
+        gen.getParams().get(5).setValue(slope);
+        gen.getParams().get(6).setValue(slcborder);
 
         table.setGenerator(gen);
         if (gen == null) {

@@ -372,6 +372,31 @@ public class Gradient {
         return equivalentTime;
     }
 
+    //    refocalize the entire gradient
+    public void refocalizeTotalGradient(Gradient gradToRef) {
+        bStaticGradient = true;
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(1)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, 1)[0] + gradToRef.getEquivalentTimeBlock(3)[0]);
+        if (Double.isNaN(equivalentTime)) {
+            prepareEquivalentTime();
+        }
+
+        double amp;
+        if (gradToRef.getSteps() > 1) {
+            amp = gradToRef.getAmplitudeArray(0);
+            amplitudeArray = new double[gradToRef.getSteps()];
+            for (int i = 0; i < gradToRef.getSteps(); i++) {
+                amplitudeArray[i] = (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
+//                    amplitudeArray[i] = -gradToRef.getAmplitudeArray(i);
+            }
+            steps = gradToRef.getSteps();
+        } else {
+            amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double gradArea = gradToRefTime * amp;
+            staticArea = -gradArea;
+            calculateStaticAmplitude();
+        }
+    }
+
     public void refocalizeGradient() {
         calculateStaticAmplitude();
     }
@@ -837,10 +862,8 @@ public class Gradient {
         }
     }
 
-
-
     //    Extract traj ordering from traj list
-    public void reoderPhaseEncodingTraj2D(ArrayList<Integer> traj) {
+    public void reoderPhaseEncoding(ArrayList<Integer> traj) {
         double[] newTable = new double[traj.size() / 2];
         System.out.println("traj.size() " + traj.size());
         for (int j = 0; j < traj.size() / 2; j++) {
@@ -851,8 +874,7 @@ public class Gradient {
 
     }
 
-    //    Extract traj ordering from traj list
-    public void reoderPhaseEncodingTraj3D(ArrayList<Integer> traj) {
+    public void reoderPhaseEncoding3D(ArrayList<Integer> traj) {
         double[] newTable = new double[traj.size() / 2];
         System.out.println("traj.size() " + traj.size());
         for (int j = 0; j < traj.size() / 2; j++) {
@@ -863,7 +885,7 @@ public class Gradient {
     }
 
     //    Extract traj ordering from traj list of plugin
-    public void reoderPhaseEncodingTraj2D(TransformPlugin plugin) {
+    public void reoderPhaseEncoding(TransformPlugin plugin) {
         int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
         double[] newTable = new double[traj.length / 2];
         System.out.println("traj.size() " + traj.length);
@@ -876,7 +898,7 @@ public class Gradient {
     }
 
     //    Extract traj ordering from traj list of plugin
-    public void reoderPhaseEncodingTraj3D(TransformPlugin plugin) {
+    public void reoderPhaseEncoding3D(TransformPlugin plugin) {
         int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
         double[] newTable = new double[traj.length / 2];
         System.out.println("traj.size() " + traj.length);
