@@ -1,0 +1,592 @@
+package rs2d.sequence.common;
+
+import rs2d.commons.log.Log;
+import rs2d.spinlab.data.transformPlugin.TransformPlugin;
+import rs2d.spinlab.instrument.Instrument;
+import rs2d.spinlab.instrument.InstrumentTxChannel;
+import rs2d.spinlab.sequence.table.Table;
+import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
+import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.tools.param.TextParam;
+import rs2d.spinlab.tools.table.Order;
+import rs2d.spinlab.tools.utility.Nucleus;
+
+import java.util.List;
+import java.util.TreeMap;
+
+import static java.util.Arrays.asList;
+
+public abstract class SeqPrepBasics extends BaseSequenceGenerator {
+    protected TreeMap<Double, RFPulse> rfPulses = new TreeMap<>();
+
+    // Constant
+    protected final int offset_channel_memory = 512;
+    protected final int phase_channel_memory = 512;
+    protected final int amp_channel_memory = 2048;
+    protected final int loopIndice_memory = 2048;
+    protected final double defaultInstructionDelay = 0.000010;     // single instruction minimal duration
+    protected final double minInstructionDelay = 0.000005;     // single instruction minimal duration
+    protected final int nb_shape_points = 128;
+    protected double blankingDelay;
+
+    // Hardware
+    protected Nucleus nucleus;
+    protected double protonFrequency;
+    protected double gMax;
+    protected double observeFrequency;
+    protected double spectralWidth;
+
+    // Enables
+    protected boolean isMultiplanar;
+    protected boolean isKSCenterMode;
+    protected boolean isEnablePhase;
+    protected boolean isEnablePhase3D;
+    protected boolean isEnableSlice;
+    protected boolean isEnableRead;
+    protected boolean isFovDoubled;
+
+    // View
+    protected double fov;
+    protected double fovPhase;
+    protected double fov3d;
+    protected double sliceThickness;
+    protected double spacingBetweenSlice;
+
+    // Matrix
+    protected int acqMatrixDimension1D;
+    protected int acqMatrixDimension2D;
+    protected int acqMatrixDimension3D;
+    protected int acqMatrixDimension4D;
+    protected int userMatrixDimension1D;
+    protected int userMatrixDimension2D;
+    protected int userMatrixDimension3D;
+    protected int userMatrixDimension4D;
+
+    // Position
+    protected double off_center_distance_1D;
+    protected double off_center_distance_2D;
+    protected double off_center_distance_3D;
+
+    // Time
+    protected double observation_time;
+    protected double min_time_per_acq_point;
+    protected double tr;
+    protected double te;
+    protected double echo_spacing;
+
+    // Loops
+    protected int nb_scan_1d;
+    protected int nb_scan_2d;
+    protected int nb_scan_3d;
+    protected int nb_scan_4d;
+    protected int nb_averages;
+    protected int nb_interleaved_slice;
+    protected int nb_planar_excitation;
+    protected int nb_slices_acquired_in_single_scan;
+    protected int nb_shoot_3d;
+    protected int nb_preScan;
+    protected int echoTrainLength;
+
+    // Plugins
+    protected TransformPlugin plugin;
+
+
+    // U params
+    // Hardware related
+    protected GeneratorParamEnum NUCLEUS_1;
+    protected GeneratorParamEnum OFFSET_FREQ_1;
+    protected GeneratorParamEnum BASE_FREQ_1;
+    protected GeneratorParamEnum RECEIVER_GAIN;
+    protected GeneratorParamEnum RECEIVER_COUNT;
+    protected GeneratorParamEnum INTERMEDIATE_FREQUENCY;
+    protected GeneratorParamEnum OBSERVED_FREQUENCY;
+    protected GeneratorParamEnum OBSERVED_NUCLEUS;
+    protected GeneratorParamEnum SPECTRAL_WIDTH;
+    protected GeneratorParamEnum SPECTRAL_WIDTH_PER_PIXEL;
+    protected GeneratorParamEnum SPECTRAL_WIDTH_OPT;
+    protected GeneratorParamEnum TX_ROUTE;
+
+    // Enables
+    protected GeneratorParamEnum KS_CENTER_MODE;
+    protected GeneratorParamEnum MULTI_PLANAR_EXCITATION;
+    protected GeneratorParamEnum GRADIENT_ENABLE_PHASE_3D;
+    protected GeneratorParamEnum GRADIENT_ENABLE_PHASE;
+    protected GeneratorParamEnum GRADIENT_ENABLE_SLICE;
+    protected GeneratorParamEnum GRADIENT_ENABLE_READ;
+
+    // View
+    protected GeneratorParamEnum FOV_SQUARE;
+    protected GeneratorParamEnum FOV_DOUBLED;
+    protected GeneratorParamEnum FIELD_OF_VIEW;
+    protected GeneratorParamEnum FIELD_OF_VIEW_PHASE;
+    protected GeneratorParamEnum FIELD_OF_VIEW_3D;
+    protected GeneratorParamEnum PHASE_FIELD_OF_VIEW_RATIO;
+    protected GeneratorParamEnum FOV_RATIO_PHASE;
+    protected GeneratorParamEnum SWITCH_READ_PHASE;
+    protected GeneratorParamEnum SLICE_THICKNESS;
+    protected GeneratorParamEnum SPACING_BETWEEN_SLICE;
+    protected GeneratorParamEnum RESOLUTION_FREQUENCY;
+    protected GeneratorParamEnum RESOLUTION_PHASE;
+    protected GeneratorParamEnum RESOLUTION_SLICE;
+    protected GeneratorParamEnum SQUARE_PIXEL;
+
+    // Matrix
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_1D;
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_2D;
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_3D;
+    protected GeneratorParamEnum USER_MATRIX_DIMENSION_4D;
+    protected GeneratorParamEnum ACQUISITION_MATRIX_DIMENSION_1D;
+    protected GeneratorParamEnum ACQUISITION_MATRIX_DIMENSION_2D;
+    protected GeneratorParamEnum ACQUISITION_MATRIX_DIMENSION_3D;
+    protected GeneratorParamEnum ACQUISITION_MATRIX_DIMENSION_4D;
+    protected GeneratorParamEnum USER_PARTIAL_PHASE;
+    protected GeneratorParamEnum USER_PARTIAL_SLICE;
+    protected GeneratorParamEnum USER_ZERO_FILLING_2D;
+    protected GeneratorParamEnum USER_ZERO_FILLING_3D;
+
+    // Position
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Z;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_Y;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_X;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_1D;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_2D;
+    protected GeneratorParamEnum OFF_CENTER_FIELD_OF_VIEW_3D;
+    protected GeneratorParamEnum IMAGE_ORIENTATION_SUBJECT;
+
+    // Time
+    protected GeneratorParamEnum ACQUISITION_TIME_PER_SCAN;
+    protected GeneratorParamEnum REPETITION_TIME;
+    protected GeneratorParamEnum ECHO_TIME;
+    protected GeneratorParamEnum ECHO_SPACING;
+    protected GeneratorParamEnum GRADIENT_RISE_TIME;
+
+    // Loops
+    protected GeneratorParamEnum DUMMY_SCAN;
+    protected GeneratorParamEnum NUMBER_OF_AVERAGES;
+    protected GeneratorParamEnum ECHO_TRAIN_LENGTH;
+    protected GeneratorParamEnum NUMBER_OF_SHOOT_3D;
+
+    // TX
+    protected GeneratorParamEnum TX_SHAPE;
+    protected GeneratorParamEnum TX_BANDWIDTH_FACTOR;
+    protected GeneratorParamEnum TX_BANDWIDTH_FACTOR_3D;
+
+    // Miscellaneous
+    protected GeneratorParamEnum SEQUENCE_VERSION;
+    protected GeneratorParamEnum MODALITY;
+    protected GeneratorParamEnum TRANSFORM_PLUGIN;
+    protected GeneratorParamEnum TX_AMP_ATT_AUTO;
+
+    // S params
+    protected GeneratorSequenceParamEnum Tx_att;
+    protected GeneratorSequenceParamEnum Grad_shape_rise_up;
+    protected GeneratorSequenceParamEnum Grad_shape_rise_down;
+
+    protected SeqPrepBasics(Class<? extends Enum> U, Class<? extends Enum> S) {
+        // U params
+        // Hardware related
+        NUCLEUS_1 = initialize(U, "NUCLEUS_1");
+        OFFSET_FREQ_1 = initialize(U, "OFFSET_FREQ_1");
+        BASE_FREQ_1 = initialize(U, "BASE_FREQ_1");
+        RECEIVER_GAIN = initialize(U, "RECEIVER_GAIN");
+        RECEIVER_COUNT = initialize(U, "RECEIVER_COUNT");
+        INTERMEDIATE_FREQUENCY = initialize(U, "INTERMEDIATE_FREQUENCY");
+        OBSERVED_FREQUENCY = initialize(U, "OBSERVED_FREQUENCY");
+        OBSERVED_NUCLEUS = initialize(U, "OBSERVED_NUCLEUS");
+        SPECTRAL_WIDTH = initialize(U, "SPECTRAL_WIDTH");
+        SPECTRAL_WIDTH_PER_PIXEL = initialize(U, "SPECTRAL_WIDTH_PER_PIXEL");
+        SPECTRAL_WIDTH_OPT = initialize(U, "SPECTRAL_WIDTH_OPT");
+        TX_ROUTE = initialize(U, "TX_ROUTE");
+
+        // Enables
+        KS_CENTER_MODE = initialize(U, "KS_CENTER_MODE");
+        MULTI_PLANAR_EXCITATION = initialize(U, "MULTI_PLANAR_EXCITATION");
+        GRADIENT_ENABLE_PHASE_3D = initialize(U, "GRADIENT_ENABLE_PHASE_3D");
+        GRADIENT_ENABLE_PHASE = initialize(U, "GRADIENT_ENABLE_PHASE");
+        GRADIENT_ENABLE_SLICE = initialize(U, "GRADIENT_ENABLE_SLICE");
+        GRADIENT_ENABLE_READ = initialize(U, "GRADIENT_ENABLE_READ");
+
+        // View
+        FOV_SQUARE = initialize(U, "FOV_SQUARE");
+        FOV_DOUBLED = initialize(U, "FOV_DOUBLED");
+        FIELD_OF_VIEW = initialize(U, "FIELD_OF_VIEW");
+        FIELD_OF_VIEW_PHASE = initialize(U, "FIELD_OF_VIEW_PHASE");
+        FIELD_OF_VIEW_3D = initialize(U, "FIELD_OF_VIEW_3D");
+        PHASE_FIELD_OF_VIEW_RATIO = initialize(U, "PHASE_FIELD_OF_VIEW_RATIO");
+        FOV_RATIO_PHASE = initialize(U, "FOV_RATIO_PHASE");
+        SWITCH_READ_PHASE = initialize(U, "SWITCH_READ_PHASE");
+        SLICE_THICKNESS = initialize(U, "SLICE_THICKNESS");
+        SPACING_BETWEEN_SLICE = initialize(U, "SPACING_BETWEEN_SLICE");
+
+        RESOLUTION_FREQUENCY = initialize(U, "RESOLUTION_FREQUENCY");
+        RESOLUTION_PHASE = initialize(U, "RESOLUTION_PHASE");
+        RESOLUTION_SLICE = initialize(U, "RESOLUTION_SLICE");
+        SQUARE_PIXEL = initialize(U, "SQUARE_PIXEL");
+
+        // Matrix
+        USER_MATRIX_DIMENSION_1D = initialize(U, "USER_MATRIX_DIMENSION_1D");
+        USER_MATRIX_DIMENSION_2D = initialize(U, "USER_MATRIX_DIMENSION_2D");
+        USER_MATRIX_DIMENSION_3D = initialize(U, "USER_MATRIX_DIMENSION_3D");
+        USER_MATRIX_DIMENSION_4D = initialize(U, "USER_MATRIX_DIMENSION_4D");
+        ACQUISITION_MATRIX_DIMENSION_1D = initialize(U, "ACQUISITION_MATRIX_DIMENSION_1D");
+        ACQUISITION_MATRIX_DIMENSION_2D = initialize(U, "ACQUISITION_MATRIX_DIMENSION_2D");
+        ACQUISITION_MATRIX_DIMENSION_3D = initialize(U, "ACQUISITION_MATRIX_DIMENSION_3D");
+        ACQUISITION_MATRIX_DIMENSION_4D = initialize(U, "ACQUISITION_MATRIX_DIMENSION_4D");
+        USER_PARTIAL_PHASE = initialize(U, "USER_PARTIAL_PHASE");
+        USER_PARTIAL_SLICE = initialize(U, "USER_PARTIAL_SLICE");
+        USER_ZERO_FILLING_2D = initialize(U, "USER_ZERO_FILLING_2D");
+        USER_ZERO_FILLING_3D = initialize(U, "USER_ZERO_FILLING_3D");
+
+        // Position
+        OFF_CENTER_FIELD_OF_VIEW_Z = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_Z");
+        OFF_CENTER_FIELD_OF_VIEW_Y = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_Y");
+        OFF_CENTER_FIELD_OF_VIEW_X = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_X");
+        OFF_CENTER_FIELD_OF_VIEW_1D = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_1D");
+        OFF_CENTER_FIELD_OF_VIEW_2D = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_2D");
+        OFF_CENTER_FIELD_OF_VIEW_3D = initialize(U, "OFF_CENTER_FIELD_OF_VIEW_3D");
+        IMAGE_ORIENTATION_SUBJECT = initialize(U, "IMAGE_ORIENTATION_SUBJECT");
+
+        // Time
+        ACQUISITION_TIME_PER_SCAN = initialize(U, "ACQUISITION_TIME_PER_SCAN");
+        REPETITION_TIME = initialize(U, "REPETITION_TIME");
+        ECHO_TIME = initialize(U, "ECHO_TIME");
+        ECHO_SPACING = initialize(U, "ECHO_SPACING");
+        GRADIENT_RISE_TIME = initialize(U, "GRADIENT_RISE_TIME");
+
+        // Loops
+        DUMMY_SCAN = initialize(U, "DUMMY_SCAN");
+        NUMBER_OF_AVERAGES = initialize(U, "NUMBER_OF_AVERAGES");
+        ECHO_TRAIN_LENGTH = initialize(U, "ECHO_TRAIN_LENGTH");
+        NUMBER_OF_SHOOT_3D = initialize(U, "NUMBER_OF_SHOOT_3D");
+
+        // TX
+        TX_SHAPE = initialize(U, "TX_SHAPE");
+        TX_BANDWIDTH_FACTOR = initialize(U, "TX_BANDWIDTH_FACTOR");
+        TX_BANDWIDTH_FACTOR_3D = initialize(U, "TX_BANDWIDTH_FACTOR_3D");
+
+        // Miscellaneous
+        SEQUENCE_VERSION = initialize(U, "SEQUENCE_VERSION");
+        MODALITY = initialize(U, "MODALITY");
+        TRANSFORM_PLUGIN = initialize(U, "TRANSFORM_PLUGIN");
+        TX_AMP_ATT_AUTO = initialize(U, "TX_AMP_ATT_AUTO");
+
+        // S params
+        Tx_att = initializeSeq(S, "Tx_att");
+        Grad_shape_rise_up = initializeSeq(S, "Grad_shape_rise_up");
+        Grad_shape_rise_down = initializeSeq(S, "Grad_shape_rise_down");
+    }
+
+    protected SeqPrepBasics() {}
+
+    protected GeneratorParamEnum initialize(Class<? extends Enum> userParamClass, String inVar) {
+        GeneratorParamEnum outVar;
+        try {
+            outVar = (GeneratorParamEnum) Enum.valueOf(userParamClass, inVar);
+        } catch (IllegalArgumentException exception) {
+            outVar = null;
+        }
+        return outVar;
+    }
+
+    protected GeneratorSequenceParamEnum initializeSeq(Class<? extends Enum> seqParamClass, String inVar) {
+        GeneratorSequenceParamEnum outVar;
+        try {
+            outVar = (GeneratorSequenceParamEnum) Enum.valueOf(seqParamClass, inVar);
+        } catch (IllegalArgumentException exception) {
+            outVar = null;
+        }
+        return outVar;
+    }
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //                  init
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    @Override
+    public void init() {
+        super.init();
+        List<String> tx_shape = asList(
+                "HARD",
+                "GAUSSIAN",
+                "SINC3",
+                "SINC5",
+                "SLR_8_5152",
+                "SLR_4_2576");
+        ((TextParam) getParam(TX_SHAPE)).setSuggestedValues(tx_shape);
+        ((TextParam) getParam(TX_SHAPE)).setRestrictedToSuggested(true);
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //                  general  structure
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    public void generate() throws Exception {
+        initUserParam();
+        this.beforeRouting();
+        if (!this.isRouted()) {
+            this.route();
+            this.initAfterRouting();//init before setup
+        }
+        //   if (!getBoolean( SETUP_MODE)) {
+        this.afterRouting();    //avoid exception during setup
+        // }
+        this.checkAndFireException();
+    }
+
+    protected void initUserParam() {
+        isKSCenterMode = getBoolean(KS_CENTER_MODE);
+        isEnablePhase3D = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE_3D);
+        isEnablePhase = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE);
+        isEnableSlice = getBoolean(GRADIENT_ENABLE_SLICE);
+        isEnableRead = getBoolean(GRADIENT_ENABLE_READ);
+        isMultiplanar = getBoolean(MULTI_PLANAR_EXCITATION);
+        isFovDoubled = getBoolean(FOV_DOUBLED);
+
+        userMatrixDimension1D = getInt(USER_MATRIX_DIMENSION_1D);
+        userMatrixDimension2D = getInt(USER_MATRIX_DIMENSION_2D);
+        userMatrixDimension3D = getInt(USER_MATRIX_DIMENSION_3D);
+        userMatrixDimension4D = getInt(USER_MATRIX_DIMENSION_4D);
+        acqMatrixDimension1D = getInt(ACQUISITION_MATRIX_DIMENSION_1D);
+        acqMatrixDimension2D = getInt(ACQUISITION_MATRIX_DIMENSION_2D);
+        acqMatrixDimension3D = getInt(ACQUISITION_MATRIX_DIMENSION_3D);
+        acqMatrixDimension4D = getInt(ACQUISITION_MATRIX_DIMENSION_4D);
+
+        off_center_distance_1D = getDouble(OFF_CENTER_FIELD_OF_VIEW_1D);
+        off_center_distance_2D = getDouble(OFF_CENTER_FIELD_OF_VIEW_2D);
+        off_center_distance_3D = getDouble(OFF_CENTER_FIELD_OF_VIEW_3D);
+
+        fov = getDouble(FIELD_OF_VIEW);
+        fovPhase = getDouble(FIELD_OF_VIEW_PHASE);
+        fov3d = getDouble(FIELD_OF_VIEW_3D);
+        sliceThickness = getDouble(SLICE_THICKNESS);
+        spacingBetweenSlice = getDouble(SPACING_BETWEEN_SLICE);
+
+        observation_time = getDouble(ACQUISITION_TIME_PER_SCAN);
+        tr = getDouble(REPETITION_TIME);
+        te = getDouble(ECHO_TIME);
+        echo_spacing = getDouble(ECHO_SPACING);
+
+        nb_preScan = getInt(DUMMY_SCAN);
+        nb_averages = getInt(NUMBER_OF_AVERAGES);
+        nb_shoot_3d = getInt(NUMBER_OF_SHOOT_3D);
+
+        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(TX_ROUTE).get(0));
+        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
+        getParam(MODALITY).setValue("MRI");
+    }
+
+    protected void beforeRouting() throws Exception {
+        Log.debug(getClass(), "------------ BEFORE ROUTING -------------");
+        // -----------------------------------------------
+        // Ini Modality class
+        // -----------------------------------------------
+        iniModal();
+
+        // -----------------------------------------------
+        // Ini RX parameters : nucleus, RX gain & frequencies
+        // -----------------------------------------------
+        iniTxRx();
+
+        // -----------------------------------------------
+        // Ini Acquisition Matrix
+        // -----------------------------------------------
+        iniAcqMat();
+
+        // -----------------------------------------------
+        // Ini ETL and VFL
+        // -----------------------------------------------
+        iniETLandVFL();
+
+        // -----------------------------------------------
+        // Ini TransformPlugin
+        // -----------------------------------------------
+        iniTransformPlugin();
+
+        // -----------------------------------------------
+        // Ini Nb XD
+        // -----------------------------------------------
+        iniScanLoop();
+
+        // -----------------------------------------------
+        // Ini SEQ_DESCRIPTION
+        // -----------------------------------------------
+        iniSeqDisp();
+
+        // -----------------------------------------------
+        // Ini Image Orientation
+        // -----------------------------------------------
+        iniImgOrientation();
+    }
+
+    protected void initAfterRouting() {
+        // -----------------------------------------------
+        // ini SeqParam basics
+        // -----------------------------------------------
+        iniSeqParamBasics();
+
+        // -----------------------------------------------
+        // ini SeqParam enable gradient lines
+        // -----------------------------------------------
+        iniSeqParamEnabled();
+    }
+
+    protected void afterRouting() throws Exception {
+        Log.debug(getClass(), "------------ AFTER ROUTING -------------");
+
+        // -----------------------------------------------
+        // prep RF pulse and sliceGrad parameters
+        // -----------------------------------------------
+        prepRFandSliceGrad();
+
+        // -----------------------------------------------
+        // prep Imaging related gradients
+        // -----------------------------------------------
+        prepImagingGrads();
+
+        // -----------------------------------------------
+        // prep Models
+        // -----------------------------------------------
+        prepModels();
+
+        // --------------------------------------------------------------------------------------------------------------------------------------------
+        // TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING --- TIMING
+        // --------------------------------------------------------------------------------------------------------------------------------------------
+        prepSeqTiming();
+
+        //--------------------------------------------------------------------------------------
+        // prep Export DICOM
+        //--------------------------------------------------------------------------------------
+        prepDicom();
+
+        //--------------------------------------------------------------------------------------
+        // prep Comments
+        //--------------------------------------------------------------------------------------
+        //prepComments();
+    }
+
+    protected void checkAndFireException() {
+    }
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //                  general  methods
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
+    //--------------------------------------------------------------------------------------
+    // ini functions for beforeRouting() and initAfterRouting()
+    //--------------------------------------------------------------------------------------
+    protected void iniModal() {
+    }
+
+    protected void iniTxRx() throws Exception {
+    }
+
+    protected void iniAcqMat() throws Exception {
+    }
+
+    protected void iniETLandVFL() throws Exception {
+    }
+
+    protected void iniTransformPlugin() throws Exception {
+    }
+
+    protected void iniScanLoop() {
+    }
+
+    protected void iniSeqDisp() {
+    }
+
+    protected void iniImgOrientation() {
+    }
+
+    protected void iniSeqParamBasics() {
+    }
+
+    protected void iniSeqParamEnabled() {
+    }
+
+    //--------------------------------------------------------------------------------------
+    // prep functions for afterRouting()
+    //--------------------------------------------------------------------------------------
+    protected void prepRFandSliceGrad() throws Exception {
+    }
+
+    protected void prepImagingGrads() throws Exception {
+    }
+
+    protected void prepModels() throws Exception {
+    }
+
+    protected void prepSeqTiming() throws Exception {
+    }
+
+    protected void prepDicom() {
+    }
+
+    protected void prepComments() {
+    }
+
+    //--------------------------------------------------------------------------------------
+    // basic functions
+    //--------------------------------------------------------------------------------------
+    protected double roundToDecimal(double numberToBeRounded, double order) {
+        return Math.round(numberToBeRounded * Math.pow(10, order)) / Math.pow(10, order);
+    }
+
+    protected Table setSequenceTableValues(GeneratorSequenceParamEnum tableName, Order order, double... values) {
+        Table table = getSequenceTable(tableName);
+        table.clear();
+        table.setOrder(order);
+        table.setLocked(true);
+
+        for (double value : values) {
+            table.add(value);
+        }
+        return table;
+    }
+
+    protected double ceilToSubDecimal(double numberToBeRounded, double Order) {
+        return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
+    }
+
+    protected double getTx_bandwidth_factor(GeneratorParamEnum tx_shape, GeneratorParamEnum tx_bandwith_factor_param, GeneratorParamEnum tx_bandwith_factor_param3d) {
+        double tx_bandwidth_factor;
+
+        List<Double> tx_bandwith_factor_table = getListDouble(tx_bandwith_factor_param);
+        List<Double> tx_bandwith_factor_3D_table = getListDouble(tx_bandwith_factor_param3d);
+
+        if (isMultiplanar) {
+            if ("GAUSSIAN".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(1);
+            } else if ("SINC3".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(2);
+            } else if ("SINC5".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(3);
+            } else if ("RAMP".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(3);
+            } else if ("SLR_8_5152".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(4);
+            } else if ("SLR_4_2576".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(5);
+            } else {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(0);
+            }
+        } else {
+            if ("GAUSSIAN".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(1);
+            } else if ("SINC3".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(2);
+            } else if ("SINC5".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(3);
+            } else if ("RAMP".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(3);
+            } else if ("SLR_8_5152".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(4);
+            } else if ("SLR_4_2576".equalsIgnoreCase(getText(tx_shape))) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(5);
+            } else {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(0);
+            }
+        }
+        return tx_bandwidth_factor;
+    }
+}
+

@@ -1,0 +1,115 @@
+package rs2d.sequence.common;
+
+import rs2d.spinlab.sequence.Sequence;
+import rs2d.spinlab.sequence.SequenceTool;
+import rs2d.spinlab.sequence.element.TimeElement;
+import rs2d.spinlab.sequence.table.Table;
+import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.tools.param.ParamLibrary;
+import rs2d.spinlab.tools.param.TextParam;
+import rs2d.spinlab.tools.table.Order;
+
+import java.util.List;
+import java.util.TreeMap;
+
+import static java.util.Arrays.asList;
+
+public class ExtTrig extends SeqPrepBasics implements ModelInterface{
+    public boolean isTriggerEnabled;
+    public List<Double> triggerTime;
+    public int nb_trigger;
+    public double time_external_trigger_delay_max;
+    public Table triggerdelay;
+
+    protected GeneratorParamEnum TRIGGER_EXTERNAL;
+    protected GeneratorParamEnum TRIGGER_TIME;
+    protected GeneratorParamEnum TRIGGER_CHANEL;
+
+    protected GeneratorSequenceParamEnum Synchro_trigger;
+    protected GeneratorSequenceParamEnum Ext_trig_source;
+    protected GeneratorSequenceParamEnum Time_trigger_delay;
+
+    private SeqPrep m_SeqPrep;
+
+    public ExtTrig(Class<? extends Enum> U, ParamLibrary library, Class<? extends Enum> S, Sequence sequence, SeqPrep seqPrep) {
+        m_SeqPrep = seqPrep;
+        userParams = library;
+        setSequence(sequence);
+
+        TRIGGER_EXTERNAL = initialize(U, "TRIGGER_EXTERNAL");
+        TRIGGER_TIME = initialize(U, "TRIGGER_TIME");
+        TRIGGER_CHANEL = initialize(U, "TRIGGER_CHANEL");
+
+        Synchro_trigger = initializeSeq(S, "Synchro_trigger");
+        Ext_trig_source = initializeSeq(S, "Ext_trig_source");
+        Time_trigger_delay = initializeSeq(S, "Time_trigger_delay");
+    }
+
+    @Override
+    public void init() {
+        TextParam triggerChanel = getParam(TRIGGER_CHANEL);
+        triggerChanel.setSuggestedValues(asList(
+                SequenceTool.ExtTrigSource.Ext1.name(),
+                SequenceTool.ExtTrigSource.Ext2.name(),
+                SequenceTool.ExtTrigSource.Ext1_AND_Ext2.name(),
+                SequenceTool.ExtTrigSource.Ext1_XOR_Ext2.name()));
+        triggerChanel.setRestrictedToSuggested(true);
+
+
+        isTriggerEnabled = getBoolean(TRIGGER_EXTERNAL);
+        triggerTime = getListDouble(TRIGGER_TIME);
+        nb_trigger = isTriggerEnabled ? triggerTime.size() : 1;
+        isTriggerEnabled = isTriggerEnabled && (nb_trigger > 0);
+    }
+
+    @Override
+    public void prep() {
+        set(Synchro_trigger, isTriggerEnabled ? TimeElement.Trigger.External : TimeElement.Trigger.Timer);
+        getSequenceParam(Synchro_trigger).setLocked(true);
+        time_external_trigger_delay_max = minInstructionDelay;
+
+        triggerdelay = setSequenceTableValues(Time_trigger_delay, Order.Four);
+        if ((!isTriggerEnabled)) {
+            triggerdelay.add(minInstructionDelay);
+        } else {
+            for (int i = 0; i < nb_trigger; i++) {
+                double time_external_trigger_delay = roundToDecimal(triggerTime.get(i), 7);
+                time_external_trigger_delay = Math.max(time_external_trigger_delay, minInstructionDelay);
+                triggerdelay.add(time_external_trigger_delay);
+                time_external_trigger_delay_max = Math.max(time_external_trigger_delay_max, time_external_trigger_delay);
+            }
+        }
+        set(Ext_trig_source, TRIGGER_CHANEL);
+    }
+
+    @Override
+    public void prepFinal() {
+
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isTriggerEnabled;
+    }
+
+    @Override
+    public TreeMap<Double, RFPulse> getRfPulses() {
+        return null;
+    }
+
+    @Override
+    protected void addUserParams() {
+
+    }
+
+    @Override
+    public String getName() {
+        return "ExtTrig";
+    }
+
+    @Override
+    public String getVersion() {
+        return null;
+    }
+}

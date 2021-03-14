@@ -1,0 +1,225 @@
+package rs2d.sequence.common;
+
+import rs2d.spinlab.sequence.Sequence;
+import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.tools.param.NumberParam;
+import rs2d.spinlab.tools.param.ParamLibrary;
+
+import java.util.TreeMap;
+
+
+public class FatSat extends SeqPrepBasics implements ModelInterface {
+    protected RFPulse pulseTXFatSat;
+    protected boolean isFatSatEnabled;
+
+    protected GeneratorParamEnum FAT_SATURATION_ENABLED; //TODO: I really thought we should unify the name one day
+    protected GeneratorParamEnum FATSAT_GRAD_APP_TIME;
+    protected GeneratorParamEnum FATSAT_OFFSET_FREQ;
+    protected GeneratorParamEnum FATSAT_TX_SHAPE;
+    protected GeneratorParamEnum FATSAT_TX_LENGTH;
+    protected GeneratorParamEnum FATSAT_BANDWIDTH;
+    protected GeneratorParamEnum FATSAT_TX_AMP_90;
+    protected GeneratorParamEnum FATSAT_TX_AMP;
+    protected GeneratorParamEnum FATSAT_FLIP_ANGLE;
+
+    protected GeneratorSequenceParamEnum Enable_fatsat;
+    protected GeneratorSequenceParamEnum Grad_amp_fatsat_read;
+    protected GeneratorSequenceParamEnum Grad_amp_fatsat_phase;
+    protected GeneratorSequenceParamEnum Grad_amp_fatsat_slice;
+    protected GeneratorSequenceParamEnum Time_grad_fatsat;
+    protected GeneratorSequenceParamEnum Time_grad_ramp_fatsat;
+    protected GeneratorSequenceParamEnum Time_before_fatsat_pulse;
+    protected GeneratorSequenceParamEnum Freq_offset_tx_fatsat_prep;
+    protected GeneratorSequenceParamEnum Freq_offset_tx_fatsat_comp;
+    protected GeneratorSequenceParamEnum Tx_amp_fatsat;
+    protected GeneratorSequenceParamEnum Tx_phase_fatsat;
+    protected GeneratorSequenceParamEnum Time_tx_fatsat;
+    protected GeneratorSequenceParamEnum Tx_shape_fatsat;
+    protected GeneratorSequenceParamEnum Tx_shape_phase_fatsat;
+    protected GeneratorSequenceParamEnum Freq_offset_tx_fatsat;
+
+    protected SeqPrep m_SeqPrep;
+
+    public FatSat(Class<? extends Enum> U, ParamLibrary library, Class<? extends Enum> S, Sequence sequence, SeqPrep seqPrep) {
+        m_SeqPrep = seqPrep;
+        userParams = library;
+        setSequence(sequence);
+
+        FAT_SATURATION_ENABLED = initialize(U, "FAT_SATURATION_ENABLED");
+        FATSAT_GRAD_APP_TIME = initialize(U, "FATSAT_GRAD_APP_TIME");
+        FATSAT_OFFSET_FREQ = initialize(U, "FATSAT_OFFSET_FREQ");
+        FATSAT_TX_SHAPE = initialize(U, "FATSAT_TX_SHAPE");
+        FATSAT_TX_LENGTH = initialize(U, "FATSAT_TX_LENGTH");
+        FATSAT_BANDWIDTH = initialize(U, "FATSAT_BANDWIDTH");
+        FATSAT_TX_AMP_90 = initialize(U, "FATSAT_TX_AMP_90");
+        FATSAT_TX_AMP = initialize(U, "FATSAT_TX_AMP"); //Some of the sequence use this name
+        FATSAT_FLIP_ANGLE = initialize(U, "FATSAT_FLIP_ANGLE");
+
+        Enable_fatsat = initializeSeq(S, "Enable_fatsat");
+        Grad_amp_fatsat_read = initializeSeq(S, "Grad_amp_fatsat_read");
+        Grad_amp_fatsat_phase = initializeSeq(S, "Grad_amp_fatsat_phase");
+        Grad_amp_fatsat_slice = initializeSeq(S, "Grad_amp_fatsat_slice");
+        Time_grad_fatsat = initializeSeq(S, "Time_grad_fatsat");
+        Time_grad_ramp_fatsat = initializeSeq(S, "Time_grad_ramp_fatsat");
+        Time_before_fatsat_pulse = initializeSeq(S, "Time_before_fatsat_pulse");
+        Freq_offset_tx_fatsat_prep = initializeSeq(S, "Freq_offset_tx_fatsat_prep");
+        Freq_offset_tx_fatsat_comp = initializeSeq(S, "Freq_offset_tx_fatsat_comp");
+
+        Tx_amp_fatsat = initializeSeq(S, "Tx_amp_fatsat");
+        Tx_phase_fatsat = initializeSeq(S, "Tx_phase_fatsat");
+        Time_tx_fatsat = initializeSeq(S, "Time_tx_fatsat");
+        Tx_shape_fatsat = initializeSeq(S, "Tx_shape_fatsat");
+        Tx_shape_phase_fatsat = initializeSeq(S, "Tx_shape_phase_fatsat");
+        Freq_offset_tx_fatsat = initializeSeq(S, "Freq_offset_tx_fatsat");
+    }
+
+    @Override
+    public void init() {
+        isFatSatEnabled = getBoolean(FAT_SATURATION_ENABLED);
+    }
+
+    @Override
+    public void prep() throws Exception {
+        set(Enable_fatsat, isFatSatEnabled);
+        prepPulse();
+        prepGrad();
+    }
+
+    @Override
+    public void prepFinal() {
+        if (getBoolean(m_SeqPrep.TX_AMP_ATT_AUTO)) {
+            if (FATSAT_TX_AMP_90 != null) {
+                getParam(FATSAT_TX_AMP_90).setValue(pulseTXFatSat.getAmp90());
+            } else {
+                getParam(FATSAT_TX_AMP).setValue(pulseTXFatSat.getAmp90());
+            }
+        } else {
+            if (FATSAT_TX_AMP_90 != null) {
+                pulseTXFatSat.setAmp(getDouble(FATSAT_TX_AMP_90));
+            } else {
+                pulseTXFatSat.setAmp(getDouble(FATSAT_TX_AMP));
+            }
+        }
+    }
+
+    @Override
+    public TreeMap<Double, RFPulse> getRfPulses() {
+        return new TreeMap<Double, RFPulse>() {{
+            put(pulseTXFatSat.getPower(), pulseTXFatSat);
+        }};
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return isFatSatEnabled;
+    }
+
+    protected void prepPulse() throws Exception {
+        pulseTXFatSat = RFPulse.createRFPulse(getSequence(), m_SeqPrep.Tx_att, Tx_amp_fatsat, Tx_phase_fatsat, Time_tx_fatsat, Tx_shape_fatsat, Tx_shape_phase_fatsat, Freq_offset_tx_fatsat);
+        pulseTXFatSat.setShape((getText(FATSAT_TX_SHAPE)), nb_shape_points, "Hamming");
+
+        // Fat SAT RF pulse
+        setSeqParamTime();
+        getParam(FATSAT_FLIP_ANGLE).setValue(getFlipAngle());
+
+        if (getBoolean(m_SeqPrep.TX_AMP_ATT_AUTO)) {
+            getPulse();
+        }
+
+        // ------------------------------------------------------------------
+        //calculate TX FREQUENCY FATSAT and compensation
+        // ------------------------------------------------------------------
+        pulseTXFatSat.setFrequencyOffset(isFatSatEnabled ? getDouble(FATSAT_OFFSET_FREQ) : 0.0);
+
+        RFPulse pulseTXFatSatPrep = RFPulse.createRFPulse(getSequence(), Time_before_fatsat_pulse, Freq_offset_tx_fatsat_prep);
+        pulseTXFatSatPrep.setCompensationFrequencyOffset(pulseTXFatSat, 0.5);
+        RFPulse pulseTXFatSatComp = RFPulse.createRFPulse(getSequence(), Time_grad_ramp_fatsat, Freq_offset_tx_fatsat_comp);
+        pulseTXFatSatComp.setCompensationFrequencyOffset(pulseTXFatSat, 0.5);
+    }
+
+    protected void prepGrad() {
+        Gradient gradFatsatRead = Gradient.createGradient(getSequence(), Grad_amp_fatsat_read, Time_grad_fatsat, m_SeqPrep.Grad_shape_rise_up, m_SeqPrep.Grad_shape_rise_down, Time_grad_ramp_fatsat, m_SeqPrep.nucleus);
+        Gradient gradFatsatPhase = Gradient.createGradient(getSequence(), Grad_amp_fatsat_phase, Time_grad_fatsat, m_SeqPrep.Grad_shape_rise_up, m_SeqPrep.Grad_shape_rise_down, Time_grad_ramp_fatsat, m_SeqPrep.nucleus);
+        Gradient gradFatsatSlice = Gradient.createGradient(getSequence(), Grad_amp_fatsat_slice, Time_grad_fatsat, m_SeqPrep.Grad_shape_rise_up, m_SeqPrep.Grad_shape_rise_down, Time_grad_ramp_fatsat, m_SeqPrep.nucleus);
+
+        if (isFatSatEnabled) {
+            double pixelDimension = getDouble(m_SeqPrep.RESOLUTION_FREQUENCY);
+            double pixel_dimension_ph = getDouble(m_SeqPrep.RESOLUTION_PHASE);
+            double pixel_dimension_sl = getDouble(m_SeqPrep.RESOLUTION_SLICE);
+
+            int pixmax = (pixelDimension > pixel_dimension_ph) ? 1 : 2;
+            pixmax = (Math.max(pixelDimension, pixel_dimension_ph) > pixel_dimension_sl) ? pixmax : 3;
+            boolean test_grad;
+            double min_fatsat_application_time;
+            switch (pixmax) {
+                case 1:
+                    test_grad = gradFatsatRead.addSpoiler(pixelDimension, 3);
+                    min_fatsat_application_time = gradFatsatRead.getMinTopTime();
+                    break;
+                case 2:
+                    test_grad = gradFatsatPhase.addSpoiler(pixel_dimension_ph, 3);
+                    min_fatsat_application_time = gradFatsatPhase.getMinTopTime();
+                    break;
+                default:
+                    test_grad = gradFatsatSlice.addSpoiler(pixel_dimension_sl, 3);
+                    min_fatsat_application_time = gradFatsatSlice.getMinTopTime();
+            }
+
+            if (!test_grad) {
+                notifyOutOfRangeParam(FATSAT_GRAD_APP_TIME, min_fatsat_application_time, ((NumberParam) getParam(FATSAT_GRAD_APP_TIME)).getMaxValue(), "FATSAT_GRAD_APP_TIME too short to get correct Spoiling");
+                set(Time_grad_fatsat, min_fatsat_application_time);
+                gradFatsatRead.rePrepare();
+                gradFatsatPhase.rePrepare();
+                gradFatsatSlice.rePrepare();
+            }
+        }
+        gradFatsatRead.applyAmplitude();
+        gradFatsatPhase.applyAmplitude();
+        gradFatsatSlice.applyAmplitude();
+    }
+
+    protected void setSeqParamTime() {
+        double tx_bandwidth_90_fs = getDouble(FATSAT_BANDWIDTH);
+        double tx_bandwidth_factor_90_fs = getTx_bandwidth_factor(FATSAT_TX_SHAPE, m_SeqPrep.TX_BANDWIDTH_FACTOR, m_SeqPrep.TX_BANDWIDTH_FACTOR_3D);
+        double tx_length_90_fs = isFatSatEnabled ? tx_bandwidth_factor_90_fs / tx_bandwidth_90_fs : minInstructionDelay;
+        getParam(FATSAT_TX_LENGTH).setValue(tx_length_90_fs);
+
+        // FatSAT timing seting needed for Flip Angle calculation
+        set(Time_grad_fatsat, isFatSatEnabled ? getDouble(FATSAT_GRAD_APP_TIME) : minInstructionDelay);
+        set(Time_before_fatsat_pulse, isFatSatEnabled ? minInstructionDelay : minInstructionDelay); //    <<<<<<<<<<<<<<<<<<<<<<<<<<< blanking ON
+        set(Time_grad_ramp_fatsat, isFatSatEnabled ? getDouble(m_SeqPrep.GRADIENT_RISE_TIME) : minInstructionDelay);
+        set(Time_tx_fatsat, tx_length_90_fs);
+    }
+
+    protected void getPulse() {
+        if (!pulseTXFatSat.checkPower(getFlipAngle(), m_SeqPrep.observeFrequency + getDouble(FATSAT_OFFSET_FREQ), m_SeqPrep.nucleus)) {
+            System.out.println(" tx_length_90_fs: " + pulseTXFatSat.getPulseDuration());
+            set(Time_tx_fatsat, pulseTXFatSat.getPulseDuration());
+            getParam(FATSAT_TX_LENGTH).setValue(pulseTXFatSat.getPulseDuration());
+//                notifyOutOfRangeParam(TX_LENGTH, pulseTXFatSat.getPulseDuration(), ((NumberParam) getParam(TX_LENGTH)).getMaxValue(), "Pulse length too short to reach RF power with this pulse shape");
+        }
+    }
+
+    protected double getFlipAngle() {
+        if (isFatSatEnabled)
+            return 90.0;
+        else
+            return 0.0;
+    }
+
+    @Override
+    protected void addUserParams() {
+
+    }
+
+    @Override
+    public String getName() {
+        return "FatSat";
+    }
+
+    @Override
+    public String getVersion() {
+        return null;
+    }
+}

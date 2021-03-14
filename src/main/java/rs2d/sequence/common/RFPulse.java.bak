@@ -21,7 +21,6 @@ import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.table.Order;
 import rs2d.spinlab.tools.utility.Nucleus;
 
-import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -399,7 +398,7 @@ public class RFPulse {
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
-        tx_amp = TxMath.getTxAmpFor(powerPulse, txCh, txAtt, observeFrequency);
+        tx_amp = (flipAngle < 135 ? tx_amp90 : tx_amp180) * flipAngle / (flipAngle < 135 ? 90 : 180);
         setSequenceTableSingleValue(amplitudeTable, tx_amp);
         return tx_amp;
     }
@@ -419,12 +418,7 @@ public class RFPulse {
         tx_amp180 = calculateTxAmp180(txCh);
         setSequenceTableValues(amplitudeTable, order);
         for (int i = 0; i < FA_list.length; i++) {
-            if (Arrays.stream(FA_list).max().getAsDouble()>=135.0){
-                tx_amp = tx_amp180 * FA_list[i] / 180;
-            }else{
-                tx_amp = tx_amp90 * FA_list[i] / 90;
-            }
-            //tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
+            tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
             amplitudeTable.add(tx_amp);
         }
         return tx_amp;
@@ -485,11 +479,6 @@ public class RFPulse {
             setTableValuesFromSLRPhaseGen(shapePhase, numberOfPoint, 0, 0, type, false, bw);
             isSlr = true;
             slrIndex = 1;
-        } else if ("TONE".equalsIgnoreCase(pulseName)) {
-            shape.clear();
-            shapePhase.clear();
-            setTableValuesFromToneGen(shape, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
-            setTableValuesFromTonePhaseGen(shapePhase, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
         }
     }
 
@@ -566,47 +555,6 @@ public class RFPulse {
         gen.getParams().get(3).setValue(abs);//abs
         gen.getParams().get(4).setValue(window);//abs
         gen.getParams().get(5).setValue(slope);
-
-        table.setGenerator(gen);
-        if (gen == null) {
-            table.clear();
-            table.setFirst(100);
-        } else {
-            gen.generate();
-        }
-    }
-
-    private void setTableValuesFromToneGen(Table table, int nbpoint, int nblobe, double amp, Boolean abs, String window, double slope, double slcborder) throws Exception {
-        TableGeneratorInterface gen = null;
-        gen = loadTableGenerator("Tone");
-        gen.getParams().get(0).setValue(nbpoint);
-        gen.getParams().get(1).setValue(nblobe);
-        gen.getParams().get(2).setValue(amp);
-        gen.getParams().get(3).setValue(abs);//abs
-        gen.getParams().get(4).setValue(window);//abs
-        gen.getParams().get(5).setValue(slope);
-        gen.getParams().get(6).setValue(slcborder);
-
-        table.setGenerator(gen);
-        if (gen == null) {
-            table.clear();
-            table.setFirst(100);
-        } else {
-            gen.generate();
-        }
-    }
-
-
-    private void setTableValuesFromTonePhaseGen(Table table, int nbpoint, int nblobe, double amp, Boolean abs, String window, double slope, double slcborder) throws Exception {
-        TableGeneratorInterface gen = null;
-        gen = loadTableGenerator("TonePhase");
-        gen.getParams().get(0).setValue(nbpoint);
-        gen.getParams().get(1).setValue(nblobe);
-        gen.getParams().get(2).setValue(amp);
-        gen.getParams().get(3).setValue(abs);//abs
-        gen.getParams().get(4).setValue(window);//abs
-        gen.getParams().get(5).setValue(slope);
-        gen.getParams().get(6).setValue(slcborder);
 
         table.setGenerator(gen);
         if (gen == null) {
@@ -912,9 +860,5 @@ public class RFPulse {
 
     private double ceilToSubDecimal(double numberToBeRounded, double Order) {
         return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
-    }
-
-    public int getAttParamValue() {
-        return ((NumberParam) attParam).getValue().intValue();
     }
 }
