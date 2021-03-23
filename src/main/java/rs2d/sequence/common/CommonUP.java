@@ -18,6 +18,10 @@ public enum CommonUP implements GeneratorParamEnum {
     SPECTRAL_WIDTH_PER_PIXEL,
     SPECTRAL_WIDTH_OPT,
     TX_ROUTE,
+    MAGNETIC_FIELD_STRENGTH,
+    DIGITAL_FILTER_SHIFT,
+    DIGITAL_FILTER_REMOVED,
+
 
     // Enables
     KS_CENTER_MODE,
@@ -74,6 +78,7 @@ public enum CommonUP implements GeneratorParamEnum {
     ECHO_TIME,
     ECHO_SPACING,
     GRADIENT_RISE_TIME,
+    MIN_RISE_TIME_FACTOR,
 
     // Loops
     DUMMY_SCAN,
@@ -83,17 +88,22 @@ public enum CommonUP implements GeneratorParamEnum {
 
     // TX
     TX_SHAPE,
+    TX_SHAPE_90,
     TX_BANDWIDTH_FACTOR,
     TX_BANDWIDTH_FACTOR_3D,
     TX_LENGTH_90,
+    TX_LENGTH_180,
     TX_LENGTH,
     FLIP_ANGLE,
+    FLIP_ANGLE_REFOC,
 
     // Miscellaneous
     SEQUENCE_VERSION,
+    SEQ_DESCRIPTION,
     MODALITY,
     TRANSFORM_PLUGIN,
     TX_AMP_ATT_AUTO;
+
 
     @Override
     public Param build() {

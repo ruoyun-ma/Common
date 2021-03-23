@@ -15,6 +15,7 @@ import rs2d.spinlab.sequence.table.Shape;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequence.table.generator.TableGeneratorInterface;
+import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.param.Param;
@@ -268,9 +269,11 @@ public class RFPulse {
      * @return tx_amp
      */
     private double calculateTxAmp90(InstrumentTxChannel txCh) {
-        if (txAtt == -1) {
-            txAtt = (int) attParam.getValue();
-        }
+        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
+        //    txAtt = (int) attParam.getValue();
+        //}
+        txAtt = ((NumberParam) attParam).getValue().intValue();
+
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
@@ -290,9 +293,11 @@ public class RFPulse {
      * @return tx_amp
      */
     private double calculateTxAmp180(InstrumentTxChannel txCh) {
-    	if (txAtt == -1) {
-            txAtt = (int) attParam.getValue();
-        }
+        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
+        //    txAtt = (int) attParam.getValue();
+        //}
+        txAtt = ((NumberParam) attParam).getValue().intValue();
+
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
@@ -318,9 +323,9 @@ public class RFPulse {
         observeFrequency = observe_frequency;
         this.nucleus = nucleus;
         boolean test_change_time = true;
-        if (txAtt == -1) {
+        //if (txAtt == -1) { //XG: we not allow to skip powercheck anymore, 2021/3/24
             test_change_time = calculatePower();
-        }
+        //}
         return test_change_time;
     }
 
@@ -348,6 +353,7 @@ public class RFPulse {
         double instrument_power = (flipAngle < 135 ? pulse.getHardPulse90().y : pulse.getHardPulse180().y) / power_factor;
         powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
         if (powerPulse > pulse.getMaxRfPowerPulsed()) {  // TX LENGTH 90 MIN
+            System.out.println(powerPulse  +"  "+pulseDuration);
             pulseDuration = ceilToSubDecimal(instrument_length / Math.sqrt(pulse.getMaxRfPowerPulsed() / (instrument_power * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2))), 6);
             setSequenceTableSingleValue(timeTable, pulseDuration);
             powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
@@ -393,9 +399,9 @@ public class RFPulse {
      * @return tx_amp
      */
     public double prepTxAmp(List<Integer> txRoute) {
-        if (txAtt == -1) {
+        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
             txAtt = ((NumberParam) attParam).getValue().intValue();
-        }
+        //}
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
@@ -411,9 +417,9 @@ public class RFPulse {
      * @return tx_amp
      */
     public double prepTxAmpMultiFA(List<Integer> txRoute, double[] FA_list, Order order) {
-        if (txAtt == -1) {
+        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
             txAtt = ((NumberParam) attParam).getValue().intValue();
-        }
+        //}
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
@@ -430,6 +436,9 @@ public class RFPulse {
         return tx_amp;
     }
 
+    public double prepTxAmpMultiFA(List<Integer> txRoute, List<Double> FA_list, Order order) {
+        return prepTxAmpMultiFA(txRoute, FA_list.stream().mapToDouble(d -> d).toArray(), order);
+    }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Shape
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -

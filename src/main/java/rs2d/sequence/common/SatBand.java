@@ -11,18 +11,30 @@ import rs2d.spinlab.tools.table.Order;
 import java.util.Arrays;
 import java.util.List;
 
+import static java.util.Arrays.asList;
+
+/**
+ *  V1.0 - 2021.3 XG
+ *
+ */
+
 
 public class SatBand implements ModelInterface {
-    private SeqPrep parent;
-    protected boolean isSatBandEnabled;
-    protected boolean isTofBandEnabled = false;
+    public SeqPrep parent;
+    protected static boolean isSatBandEnabled;
+    protected static boolean isTofBandEnabled;
 
-    protected RFPulse pulseTXSatBand;
+    public RFPulse pulseTXSatBand;
+    public Gradient gradSatBandSlice;
+    public Gradient gradSatBandPhase;
+    public Gradient gradSatBandRead;
+    public Gradient gradSatBandSpoilerSlice;
+    public Gradient gradSatBandSpoilerPhase;
+    public Gradient gradSatBandSpoilerRead;
+
     protected boolean isAttAuto;
     private boolean isSBorTSEnabled;
     protected int[] position_sli_ph_rea = new int[6];
-    protected int nb_satband;
-    protected int nb_planar_excitation; // we cannot use SeqPrep.nb_planar_excitation, since it has not been initialized yet
 
     double[] offsetFreqSBTable;
     double[] gradAmpSBSliceTable;
@@ -37,7 +49,7 @@ public class SatBand implements ModelInterface {
         SATBAND_TX_SHAPE,
         SATBAND_TX_AMP,
         SATBAND_T1,
-        SATBAND_TAU,
+        SATBAND_TAU,  // dedicated input from the user
         SATBAND_THICKNESS,
         SATBAND_ORIENTATION,
         SATBAND_DISTANCE_FROM_FOV,
@@ -78,7 +90,15 @@ public class SatBand implements ModelInterface {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        parent.setSuggestedValFromListString(parent.tx_shape, true, UP.SATBAND_TX_SHAPE);
+
+        List<String> satbandOrientationAllowed = asList("CRANIAL", "CAUDAL", "CRANIAL AND CAUDAL",
+                "ANTERIOR", "POSTERIOR", "ANTERIOR AND POSTERIOR",
+                "RIGHT", "LEFT", "RIGHT AND LEFT",
+                "ALL");
+        parent.setSuggestedValFromListString(satbandOrientationAllowed, true, UP.SATBAND_ORIENTATION);
+
         isAttAuto = parent.getBoolean(CommonUP.TX_AMP_ATT_AUTO);
         isSatBandEnabled = parent.getBoolean(UP.SATBAND_ENABLED);
         position_sli_ph_rea = satBandPrep();
@@ -88,29 +108,30 @@ public class SatBand implements ModelInterface {
     public void initFinal() throws Exception {
         isSBorTSEnabled = isSatBandEnabled || isTofBandEnabled;
         parent.set(SP.Enable_sb, isSBorTSEnabled);
-        nb_satband = 1;
+        parent.nb_satband = 1;
 
         if (isSatBandEnabled) {
-            nb_satband = (int) Arrays.stream(position_sli_ph_rea).filter(item -> item == 1).count();
-        } else if (parent.models.get("TofSat") != null && parent.models.get("TofSat").isEnabled()) {
-            nb_satband = nb_planar_excitation;
+            parent.nb_satband = (int) Arrays.stream(position_sli_ph_rea).filter(item -> item == 1).count();
         }
         // bug on the loop //TODO: XG: JR, Could you please check it? what is the bug on the loop?
         //nb_satband = 1;
 
-        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), CommonSP.Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb);
-        pulseTXSatBand.setShape(parent.getText(UP.SATBAND_TX_SHAPE), parent.nb_shape_points, "90 degree");
-
-        if (isTofBandEnabled) { //TODO: better merge TOF2D_SB_TX_SHAPE with SATBAND_TX_SHAPE one day
-            pulseTXSatBand.setShape(parent.getText(TofSat.UP.TOF2D_SB_TX_SHAPE), parent.nb_shape_points, "90 degree");
+        if (parent.hasParam(SatBand.UP.SATBAND_ENABLED)) {
+            parent.getParam(SatBand.UP.SATBAND_ENABLED).setValue(isSatBandEnabled);
         }
+        if (parent.hasParam(TofSat.UP.TOF2D_ENABLED)) {
+            parent.getParam(TofSat.UP.TOF2D_ENABLED).setValue(isTofBandEnabled);
+        }
+
+        setSeqParamTime();
+        initPulseandGrad();
     }
 
     @Override
     public void prep() throws Exception {
         prepPulse();
         prepGrad();
-        prepPulseComp(isSatBandEnabled);
+        prepPulseComp();
     }
 
     @Override
@@ -119,6 +140,14 @@ public class SatBand implements ModelInterface {
             parent.getParam(UP.SATBAND_TX_AMP).setValue(pulseTXSatBand.getAmp180()); //TODO: XG: JR, please check here, some sequence use pulseTXSatBand.getAmp90() instead
         } else
             pulseTXSatBand.setAmp(parent.getDouble(UP.SATBAND_TX_AMP));
+
+        if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
+            String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
+            if (isSBorTSEnabled)
+                seqDescription += "_SATBAND";
+
+            parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);
+        }
     }
 
     @Override
@@ -127,69 +156,100 @@ public class SatBand implements ModelInterface {
     }
 
     @Override
+    public double getDuration() {
+        double GradDuration = 2 * parent.getSequenceTable(SP.Time_grad_ramp_sb).get(0).doubleValue()
+                + parent.getSequenceTable(SP.Time_grad_sb).get(0).doubleValue();
+
+        double RFDuration = 2 * parent.getSequenceTable(SP.Time_grad_ramp_sb).get(0).doubleValue()
+                + parent.getSequenceTable(SP.Time_tx_sb).get(0).doubleValue();
+
+        double OverlapDuration = 0.0;
+
+        double eachDuration = GradDuration + RFDuration - OverlapDuration;
+
+        return eachDuration * parent.nb_satband;
+    }
+
+    @Override
+    public String getName() {
+        return "SatBand";
+    }
+
+    @Override
     public boolean isEnabled() {
         return isSatBandEnabled;
     }
 
+    protected void initPulseandGrad() throws Exception {
+        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), CommonSP.Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb);
+        pulseTXSatBand.setShape(parent.getText(UP.SATBAND_TX_SHAPE), parent.nb_shape_points, "90 degree");
+
+        if (isTofBandEnabled) { //TODO: better merge TOF2D_SB_TX_SHAPE with SATBAND_TX_SHAPE one day
+            pulseTXSatBand.setShape(parent.getText(TofSat.UP.TOF2D_SB_TX_SHAPE), parent.nb_shape_points, "90 degree");
+        }
+
+        gradSatBandSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_slice, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+        gradSatBandPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_phase, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+        gradSatBandRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+        gradSatBandSpoilerSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_slice_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+        gradSatBandSpoilerPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_phase_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+        gradSatBandSpoilerRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+    }
+
     protected void prepPulse() {
         // SAT BAND RF pulse
-        setSeqParamTime();
+        //setSeqParamTime();
 
         if (isAttAuto)
             clcPulse();
     }
 
     protected void prepGrad() {
-        offsetFreqSBTable = new double[nb_satband];
-        gradAmpSBSliceTable = new double[nb_satband];
-        gradAmpSBPhaseTable = new double[nb_satband];
-        gradAmpSBReadTable = new double[nb_satband];
-        gradAmpSBSliceSpoilerTable = new double[nb_satband];
-        gradAmpSBPhaseSpoilerTable = new double[nb_satband];
-        gradAmpSBReadSpoilerTable = new double[nb_satband];
+        System.out.println("parent.nb_satband = "+parent.nb_satband);
+        offsetFreqSBTable = new double[isSatBandEnabled? parent.nb_satband: parent.nb_planar_excitation];
+        gradAmpSBSliceTable = new double[parent.nb_satband];
+        gradAmpSBPhaseTable = new double[parent.nb_satband];
+        gradAmpSBReadTable = new double[parent.nb_satband];
+        gradAmpSBSliceSpoilerTable = new double[parent.nb_satband];
+        gradAmpSBPhaseSpoilerTable = new double[parent.nb_satband];
+        gradAmpSBReadSpoilerTable = new double[parent.nb_satband];
 
         prepGradTable();
 
         // Apply values ot Gradient
-        Gradient gradSatBandSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_slice, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandSlice.setAmplitude(gradAmpSBSliceTable);
         gradSatBandSlice.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
-        Gradient gradSatBandPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_phase, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandPhase.setAmplitude(gradAmpSBPhaseTable);
         gradSatBandPhase.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
-        Gradient gradSatBandRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandRead.setAmplitude(gradAmpSBReadTable);
         gradSatBandRead.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
-        Gradient gradSatBandSpoilerSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_slice_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandSpoilerSlice.setAmplitude(gradAmpSBSliceSpoilerTable);
         gradSatBandSpoilerSlice.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
-        Gradient gradSatBandSpoilerPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_phase_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandSpoilerPhase.setAmplitude(gradAmpSBPhaseSpoilerTable);
         gradSatBandSpoilerPhase.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
-        Gradient gradSatBandSpoilerRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read_spoiler, SP.Time_grad_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
         gradSatBandSpoilerRead.setAmplitude(gradAmpSBReadSpoilerTable);
         gradSatBandSpoilerRead.applyAmplitude(isSatBandEnabled ? Order.LoopB : Order.FourLoop);
 
     }
 
     protected void prepGradTable() {
-        double tx_length_sb = 0.0;
+        double tx_length_sb = parent.minInstructionDelay;
         if (parent.hasParam(CommonUP.TX_LENGTH_90)) {
             tx_length_sb = isSBorTSEnabled ? parent.getDouble(CommonUP.TX_LENGTH_90) : parent.minInstructionDelay;
         } else if (parent.hasParam(CommonUP.TX_LENGTH)) {
             tx_length_sb = isSBorTSEnabled ? parent.getDouble(CommonUP.TX_LENGTH) : parent.minInstructionDelay;
         } else {
-            Log.error(getClass(), "User Param TX_LENGTH_90 or TX_LENGTH does not exist");
+            Log.error(getClass(), "User Param TX_LENGTH_90 and TX_LENGTH do not exist");
         }
 
-        double tx_bandwidth_factor_sb = 0.0;
-        double grad_amp_sat_spoiler = 0.0;
-        double satband_thickness = 0.0;
+        double tx_bandwidth_factor_sb = parent.minInstructionDelay;
+        double grad_amp_sat_spoiler = parent.minInstructionDelay;
+        double satband_thickness = parent.minInstructionDelay;
         if (isSatBandEnabled) {
             tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(UP.SATBAND_TX_SHAPE, CommonUP.TX_BANDWIDTH_FACTOR, CommonUP.TX_BANDWIDTH_FACTOR_3D);
             grad_amp_sat_spoiler = parent.getDouble(UP.SATBAND_GRAD_AMP_SPOILER);
@@ -198,9 +258,6 @@ public class SatBand implements ModelInterface {
             tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF2D_SB_TX_SHAPE, CommonUP.TX_BANDWIDTH_FACTOR, CommonUP.TX_BANDWIDTH_FACTOR_3D);
             grad_amp_sat_spoiler = parent.getDouble(TofSat.UP.TOF2D_SB_GRAMP_SP);
             satband_thickness = parent.getDouble(TofSat.UP.TOF2D_SB_THICKNESS);
-        } else {
-            Log.error(getClass(), "User Param SATBAND_TX_SHAPE or SATBAND_GRAD_AMP_SPOILER or SATBAND_THICKNESS and TOF2D_SB_TX_SHAPE " +
-                    "or TOF2D_SB_GRAMP_SP or TOF2D_SB_THICKNESS do not exist");
         }
 
         double tx_bandwidth_sb = tx_bandwidth_factor_sb / tx_length_sb;
@@ -291,35 +348,38 @@ public class SatBand implements ModelInterface {
                 n += 1;
             }
         } else if (isTofBandEnabled) {
-                double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
-                double off_center_slice_pos = satband_distance_from_slice + satband_tof_thickness / 2.0; // sat band cranial from voxel
-                double off_center_slice_neg = -off_center_slice_pos;  // caudal
-                double off_center_slice = 0;
-                if ("BELOW THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
-                    off_center_slice = off_center_slice_neg;
-                } else if ("ABOVE THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
-                    off_center_slice = off_center_slice_pos;
-                }
-                double frequency_offset_sat_slice = -grad_amp_satband_mTpm * off_center_slice * (GradientMath.GAMMA / parent.nucleus.getRatio());
+            double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
+            double off_center_slice_pos = satband_distance_from_slice + satband_thickness / 2.0; // sat band cranial from voxel
+            double off_center_slice_neg = -off_center_slice_pos;  // caudal
+            double off_center_slice = 0;
+            if ("BELOW THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
+                off_center_slice = off_center_slice_neg;
+            } else if ("ABOVE THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
+                off_center_slice = off_center_slice_pos;
+            }
+            double frequency_offset_sat_slice = -grad_amp_satband_mTpm * off_center_slice * (GradientMath.GAMMA / parent.nucleus.getRatio());
 
-                System.out.println("(parent.getBoolean(CommonUP.MULTI_PLANAR_EXCITATION) ? parent.getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D) : 1) "+(parent.getBoolean(CommonUP.MULTI_PLANAR_EXCITATION) ? parent.getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D) : 1));
-                for (int k = 0; k < nb_planar_excitation; k++) {
+            for (int k = 0; k < parent.nb_planar_excitation; k++) {
+                if (parent.pulseTX != null && parent.gradSlice != null)
                     offsetFreqSBTable[k] = (parent.pulseTX.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
-//                    System.out.println("frequency_offset_tof2d[k]  " + offsetFreqSBTable[k]);
-                }
+                else if (parent.pulseTX90 != null && parent.gradSlice90 != null)
+                    offsetFreqSBTable[k] = (parent.pulseTX90.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
+                else
+                    Log.error(getClass(), "RFPulse or Gradient Object pulseTX/pulseTX90 and gradSlice/gradSlice90 do not exist");
+            }
 
-                gradAmpSBSliceTable[0] = grad_amp_satband;
-                gradAmpSBPhaseTable[0] = 0;
-                gradAmpSBReadTable[0] = 0;
-                gradAmpSBSliceSpoilerTable[0] = 0;
-                gradAmpSBPhaseSpoilerTable[0] = grad_amp_sat_spoiler;
-                gradAmpSBReadSpoilerTable[0] = grad_amp_sat_spoiler;
+            gradAmpSBSliceTable[0] = grad_amp_satband;
+            gradAmpSBPhaseTable[0] = 0;
+            gradAmpSBReadTable[0] = 0;
+            gradAmpSBSliceSpoilerTable[0] = 0;
+            gradAmpSBPhaseSpoilerTable[0] = grad_amp_sat_spoiler;
+            gradAmpSBReadSpoilerTable[0] = grad_amp_sat_spoiler;
         }
     }
 
-    protected void prepPulseComp(boolean isEnabled) {
+    protected void prepPulseComp() {
         pulseTXSatBand.addFrequencyOffset(offsetFreqSBTable);
-        pulseTXSatBand.setFrequencyOffset(isEnabled ? Order.LoopB : Order.FourLoop);
+        pulseTXSatBand.setFrequencyOffset(isSatBandEnabled ? Order.LoopB : isTofBandEnabled ? Order.Three : Order.FourLoop);
 
         RFPulse pulseTXSatBandPrep = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_sb, SP.Freq_offset_tx_sb_prep);
         pulseTXSatBandPrep.setCompensationFrequencyOffset(pulseTXSatBand, 0.5);
@@ -364,15 +424,26 @@ public class SatBand implements ModelInterface {
             if (parent.hasParam(UP.SATBAND_TAU) && parent.getDouble(UP.SATBAND_TAU) > 0.0) {
                 time_tau_sat = parent.getDouble(UP.SATBAND_TAU);
             } else {
-                //time_tau_sat = TimeEvents.getTimeBetweenEvents(parent.getSequence(), Events.FatSatPulse.ID, Events.TX90.ID);
-                Log.warning(getClass(), "We suppose the time between FatSat and Excitation Pules are negligible");
+//                //time_tau_sat = TimeEvents.getTimeBetweenEvents(parent.getSequence(), Events.FatSatPulse.ID, Events.TX90.ID);
+                if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
+                    time_tau_sat += parent.models.get("FatSatWep").getDuration();
+                } else if (parent.models.containsKey("FatSat")) {
+                    time_tau_sat += parent.models.get("FatSat").getDuration();
+                }
 
-                if (parent.hasParam(FatSat.UP.FATSAT_TX_LENGTH) && parent.getDouble(FatSat.UP.FATSAT_TX_LENGTH) > 0.0)
-                    time_tau_sat = parent.getDouble(FatSat.UP.FATSAT_TX_LENGTH);
-                if (parent.hasParam(CommonUP.TX_LENGTH_90))
+                if (parent.models.containsKey("InvRec")) {
+                    time_tau_sat += parent.getSequenceTable(InvRec.SP.Time_TI_delay).getMaxValue();
+                }
+
+                if (parent.models.containsKey("TofSat")) {
+                    time_tau_sat += parent.getSequenceTable(TofSat.SP.Time_flow).getMaxValue() ;
+                }
+
+                if (parent.hasParam(CommonUP.TX_LENGTH_90)) {
                     time_tau_sat += parent.getDouble(CommonUP.TX_LENGTH_90);
-                if (parent.hasParam(CommonUP.TX_LENGTH))
+                } else if (parent.hasParam(CommonUP.TX_LENGTH)) {
                     time_tau_sat += parent.getDouble(CommonUP.TX_LENGTH);
+                }
             }
 
             double time_t1_satband = parent.getDouble(UP.SATBAND_T1);
@@ -412,9 +483,6 @@ public class SatBand implements ModelInterface {
         } else if ("RIGHT".equalsIgnoreCase(satbandOrientation)) {
             right = true;
         } else if ("LEFT".equalsIgnoreCase(satbandOrientation)) {
-            left = true;
-        } else if ("RIGHT AND LEFT".equalsIgnoreCase(satbandOrientation)) {
-            right = true;
             left = true;
         } else if ("RIGHT AND LEFT".equalsIgnoreCase(satbandOrientation)) {
             right = true;

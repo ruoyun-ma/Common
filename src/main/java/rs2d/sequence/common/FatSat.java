@@ -5,13 +5,21 @@ import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.param.Param;
 
+/**
+ *  V1.0 - 2021.3 XG
+ *
+ */
 
 public class FatSat implements ModelInterface {
-    private SeqPrep parent;
-    protected boolean isFatSatEnabled;
-    protected boolean isFatSatWepEnabled = false;
+    public SeqPrep parent;
+    protected static boolean isFatSatEnabled;
+    protected static boolean isFatSatWepEnabled;
 
-    protected RFPulse pulseTXFatSat;
+    public RFPulse pulseTXFatSat;
+    public Gradient gradFatsatRead;
+    public Gradient gradFatsatPhase;
+    public Gradient gradFatsatSlice;
+
     protected boolean isAttAuto;
     private boolean isFSorFSWEnabled;
 
@@ -25,7 +33,8 @@ public class FatSat implements ModelInterface {
         FATSAT_BANDWIDTH,
         FATSAT_TX_AMP_90,
         FATSAT_TX_AMP,
-        FATSAT_FLIP_ANGLE;
+        FATSAT_FLIP_ANGLE,
+        ;
 
         @Override
         public Param build() {
@@ -34,7 +43,7 @@ public class FatSat implements ModelInterface {
     }
 
     protected enum SP implements GeneratorSequenceParamEnum {
-        Enable_fatsat,
+        Enable_fs,
         Grad_amp_fatsat_read,
         Grad_amp_fatsat_phase,
         Grad_amp_fatsat_slice,
@@ -48,7 +57,8 @@ public class FatSat implements ModelInterface {
         Time_tx_fatsat,
         Tx_shape_fatsat,
         Tx_shape_phase_fatsat,
-        Freq_offset_tx_fatsat;
+        Freq_offset_tx_fatsat,
+        ;
     }
 
     public FatSat(SeqPrep parent) {
@@ -56,18 +66,30 @@ public class FatSat implements ModelInterface {
     }
 
     @Override
-    public void init() throws Exception {
+    public void init() {
+        parent.setSuggestedValFromListString(parent.tx_shape, true, UP.FATSAT_TX_SHAPE);
+
         isAttAuto = parent.getBoolean(CommonUP.TX_AMP_ATT_AUTO);
         isFatSatEnabled = parent.getBoolean(UP.FAT_SATURATION_ENABLED);
-
-        pulseTXFatSat = RFPulse.createRFPulse(parent.getSequence(), CommonSP.Tx_att, SP.Tx_amp_fatsat, SP.Tx_phase_fatsat, SP.Time_tx_fatsat, SP.Tx_shape_fatsat, SP.Tx_shape_phase_fatsat, SP.Freq_offset_tx_fatsat);
-        pulseTXFatSat.setShape(parent.getText(UP.FATSAT_TX_SHAPE), parent.nb_shape_points, "Hamming");
     }
 
     @Override
-    public void initFinal() {
+    public void initFinal() throws Exception {
         isFSorFSWEnabled = isFatSatEnabled || isFatSatWepEnabled;
-        parent.set(SP.Enable_fatsat, isFSorFSWEnabled);
+        parent.set(SP.Enable_fs, isFSorFSWEnabled);
+
+        parent.getParam(UP.FATSAT_BANDWIDTH).setDefaultValue(parent.protonFrequency * 3.5);
+        parent.getParam(UP.FATSAT_OFFSET_FREQ).setDefaultValue(parent.protonFrequency * 3.5);
+
+        if (parent.hasParam(UP.FAT_SATURATION_ENABLED)) {
+            parent.getParam(UP.FAT_SATURATION_ENABLED).setValue(isFatSatEnabled);
+        }
+        if (parent.hasParam(FatSatWep.UP.FAT_SATURATION_WEP_ENABLED)) {
+            parent.getParam(FatSatWep.UP.FAT_SATURATION_WEP_ENABLED).setValue(isFatSatWepEnabled);
+        }
+
+        setSeqParamTime();
+        initPulseandGrad();
     }
 
     @Override
@@ -92,6 +114,17 @@ public class FatSat implements ModelInterface {
                 pulseTXFatSat.setAmp(parent.getDouble(UP.FATSAT_TX_AMP));
             }
         }
+
+        if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
+            String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
+            if (isFatSatEnabled) {
+                seqDescription += "_FATSAT";
+            }
+            if (isFatSatWepEnabled) {
+                seqDescription += "_FATSATWEP";
+            }
+            parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);
+        }
     }
 
     @Override
@@ -100,13 +133,46 @@ public class FatSat implements ModelInterface {
     }
 
     @Override
+    public double getDuration() {
+        double GradDuration = 2 * parent.getSequenceTable(SP.Time_grad_ramp_fatsat).get(0).doubleValue()
+                + parent.getSequenceTable(SP.Time_grad_fatsat).get(0).doubleValue();
+
+        double RFDuration = parent.getSequenceTable(SP.Time_before_fatsat_pulse).get(0).doubleValue()
+                + parent.getSequenceTable(SP.Time_tx_fatsat).get(0).doubleValue()
+                + parent.getSequenceTable(SP.Time_grad_fatsat).get(0).doubleValue();
+
+        double OverlapDuration = parent.getSequenceTable(SP.Time_grad_ramp_fatsat).get(0).doubleValue();
+
+        double eachDuration = GradDuration + RFDuration - OverlapDuration;
+
+        return eachDuration;
+    }
+
+    @Override
+    public String getName() {
+        return "FatSat";
+    }
+
+    @Override
     public boolean isEnabled() {
         return isFatSatEnabled;
     }
 
+    protected void initPulseandGrad() throws Exception {
+        pulseTXFatSat = RFPulse.createRFPulse(parent.getSequence(), CommonSP.Tx_att, SP.Tx_amp_fatsat, SP.Tx_phase_fatsat,
+                SP.Time_tx_fatsat, SP.Tx_shape_fatsat, SP.Tx_shape_phase_fatsat, SP.Freq_offset_tx_fatsat);
+        pulseTXFatSat.setShape(parent.getText(UP.FATSAT_TX_SHAPE), parent.nb_shape_points, "Hamming");
+
+        gradFatsatRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_read, SP.Time_grad_fatsat,
+                CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
+        gradFatsatPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_phase, SP.Time_grad_fatsat,
+                CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
+        gradFatsatSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_slice, SP.Time_grad_fatsat,
+                CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
+    }
+
     protected void prepPulse() throws Exception {
         // Fat SAT RF pulse
-        setSeqParamTime();
         parent.getParam(UP.FATSAT_FLIP_ANGLE).setValue(getFlipAngle());
 
         if (isAttAuto)
@@ -114,10 +180,6 @@ public class FatSat implements ModelInterface {
     }
 
     protected void prepGrad() {
-        Gradient gradFatsatRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_read, SP.Time_grad_fatsat, CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
-        Gradient gradFatsatPhase = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_phase, SP.Time_grad_fatsat, CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
-        Gradient gradFatsatSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fatsat_slice, SP.Time_grad_fatsat, CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_fatsat, parent.nucleus);
-
         if (isFSorFSWEnabled) {
             double pixelDimension = parent.getDouble(CommonUP.RESOLUTION_FREQUENCY);
             double pixel_dimension_ph = parent.getDouble(CommonUP.RESOLUTION_PHASE);
@@ -168,10 +230,10 @@ public class FatSat implements ModelInterface {
         double tx_bandwidth_90_fs = parent.getDouble(UP.FATSAT_BANDWIDTH);
         double tx_bandwidth_factor_90_fs = parent.getTx_bandwidth_factor(UP.FATSAT_TX_SHAPE, CommonUP.TX_BANDWIDTH_FACTOR, CommonUP.TX_BANDWIDTH_FACTOR_3D);
         double tx_length_90_fs = isFatSatEnabled ? tx_bandwidth_factor_90_fs / tx_bandwidth_90_fs : parent.minInstructionDelay;
+        tx_length_90_fs = isFatSatWepEnabled ? parent.getDouble(FatSatWep.UP.FATSAT_WEP_TX_LENGTH) : tx_length_90_fs;
 
         parent.getParam(UP.FATSAT_TX_LENGTH).setValue(tx_length_90_fs);
         parent.set(SP.Time_tx_fatsat, tx_length_90_fs);
-
         parent.set(SP.Time_before_fatsat_pulse, parent.blankingDelay);
 
         // FatSAT timing seting needed for Flip Angle calculation
@@ -184,7 +246,7 @@ public class FatSat implements ModelInterface {
         }
 
         if (isFatSatWepEnabled) {
-            parent.set(FatSat.SP.Time_tx_fatsat, parent.getDouble(FatSatWep.UP.FATSAT_WEP_TX_LENGTH));
+            parent.set(SP.Time_tx_fatsat, parent.getDouble(FatSatWep.UP.FATSAT_WEP_TX_LENGTH));
         }
     }
 
@@ -193,12 +255,12 @@ public class FatSat implements ModelInterface {
             double tx_length_90_fs = pulseTXFatSat.getPulseDuration();
             parent.set(SP.Time_tx_fatsat, tx_length_90_fs);
             parent.getParam(UP.FATSAT_TX_LENGTH).setValue(pulseTXFatSat.getPulseDuration());
-
             if (isFatSatWepEnabled) {
-                    parent.set(FatSat.SP.Time_tx_fatsat, tx_length_90_fs);
-                    parent.set(FatSatWep.SP.Time_tx_fatsat_wep, tx_length_90_fs);
-                    parent.getParam(FatSatWep.UP.FATSAT_WEP_TX_LENGTH).setValue(tx_length_90_fs);
+                //parent.set(SP.Time_tx_fatsat, tx_length_90_fs);
+                parent.set(FatSatWep.SP.Time_tx_fatsat_wep, tx_length_90_fs);
+                parent.getParam(FatSatWep.UP.FATSAT_WEP_TX_LENGTH).setValue(tx_length_90_fs);
             }
+            System.out.println(pulseTXFatSat.getPower()+ " pulseTXFatSat.getPower()   ERROR");
         }
     }
 

@@ -1,25 +1,21 @@
 package rs2d.sequence.common;
 
-import rs2d.spinlab.sequence.Sequence;
 import rs2d.spinlab.sequence.SequenceTool;
 import rs2d.spinlab.sequence.element.TimeElement;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.param.Param;
-import rs2d.spinlab.tools.param.ParamLibrary;
 import rs2d.spinlab.tools.param.TextParam;
 import rs2d.spinlab.tools.table.Order;
 
 import java.util.List;
-import java.util.TreeMap;
-import java.util.stream.Collectors;
 
 import static java.util.Arrays.asList;
 
 public class ExtTrig implements ModelInterface{
     private SeqPrep parent;
-    protected boolean isTriggerEnabled;
+    protected static boolean isTriggerEnabled;
 
     public List<Double> triggerTime;
     public int nb_trigger;
@@ -91,7 +87,17 @@ public class ExtTrig implements ModelInterface{
 
     @Override
     public void prepFinal() {
+        if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
+            String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
 
+            if (isTriggerEnabled && nb_trigger != 1) {
+                seqDescription += "_TRIG=" + nb_trigger;
+            } else if (isTriggerEnabled) {
+                seqDescription += "_TRIG";
+            }
+
+            parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);
+        }
     }
 
     @Override
@@ -102,6 +108,16 @@ public class ExtTrig implements ModelInterface{
     @Override
     public RFPulse getRfPulses() {
         return null;
+    }
+
+    @Override
+    public double getDuration() {
+        return triggerdelay.getMaxValue();
+    }
+
+    @Override
+    public String getName() {
+        return "ExtTrig";
     }
 
 }

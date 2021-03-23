@@ -15,5 +15,11 @@ public enum CommonSP implements GeneratorSequenceParamEnum{
     Grad_shape_rise_up,
     Grad_shape_rise_down,
     Gradient_axe_phase,
-    Gradient_axe_read;
+    Gradient_axe_read,
+    Time_grad_ramp,
+    Tx_amp_180,
+    Tx_phase_180,
+    Tx_shape_180,
+    Tx_shape_phase_180,
+    Nb_echo;
 }

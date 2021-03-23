@@ -4,6 +4,7 @@ import rs2d.commons.log.Log;
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
 import rs2d.spinlab.instrument.Instrument;
 import rs2d.spinlab.instrument.InstrumentTxChannel;
+import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
@@ -24,21 +25,26 @@ import java.util.TreeMap;
  * Abstract Class SeqPrepBasics
  * prep common functions
  * V1.0- 2021-3-16 XG
- *
+ * <p>
  * First-level and Second-level Structures
  * are Mandatory for all type of MR sequences
- *
+ * <p>
  * Basic Functions/ Methods
  * are Shared for all sequences
- *
  */
 
 public abstract class SeqPrepBasics extends BaseSequenceGenerator {
-    protected TreeMap<Double, RFPulse> rfPulses = new TreeMap<>();
+    protected TreeMap<Double, RFPulse> rfPulsesTree = new TreeMap<>();
+    protected List<RFPulse> rfPulses = new ArrayList<>();
     protected TreeMap<String, ModelInterface> models = new TreeMap<>();
-    protected List<String> modalNames;
+    protected List<String> modelNames;
     protected RFPulse pulseTX;
+    protected RFPulse pulseTX90; //TODO:XG: we better unify them in future
+    protected RFPulse pulseTX180;
     protected Gradient gradSlice;
+    protected Gradient gradSlice90;
+    protected Gradient gradSlice180;
+    protected Gradient gradReadout;
 
     // Constant
     public final static int offset_channel_memory = 512;
@@ -47,7 +53,6 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public final static int loopIndice_memory = 2048;
     public final static double defaultInstructionDelay = 0.000010;     // single instruction minimal duration
     public final static double minInstructionDelay = 0.000005;     // single instruction minimal duration
-    public final static int nb_shape_points = 128;
 
     // Hardware
     protected double blankingDelay;
@@ -107,10 +112,14 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     protected int nb_shoot_3d;
     protected int nb_preScan;
     protected int nb_satband;
+    protected int nb_echo_4D;
     protected int echoTrainLength;
 
-    // Plugins
+    // Miscellaneous
     protected TransformPlugin plugin;
+    protected List<String> tx_shape;
+    protected int nb_shape_points;
+    protected double grad_rise_time;
 
     protected SeqPrepBasics() {
     }
@@ -119,8 +128,12 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     //                  first-level  structure (general)
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @Override
-    public void init() {}
+    public void init() {
+        super.init();
+        iniModels();
+    }
 
+    @Override
     public void generate() throws Exception {
         initUserParam();
         this.beforeRouting();
@@ -134,50 +147,9 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         this.checkAndFireException();
     }
 
-    protected void initUserParam() {
-        isKSCenterMode = getBoolean(CommonUP.KS_CENTER_MODE);
-        isEnablePhase3D = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE_3D);
-        isEnablePhase = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE);
-        isEnableSlice = getBoolean(CommonUP.GRADIENT_ENABLE_SLICE);
-        isEnableRead = getBoolean(CommonUP.GRADIENT_ENABLE_READ);
-        isMultiplanar = getBoolean(CommonUP.MULTI_PLANAR_EXCITATION);
-        isFovDoubled = getBoolean(CommonUP.FOV_DOUBLED);
+    public void initUserParam() {}
 
-        userMatrixDimension1D = getInt(CommonUP.USER_MATRIX_DIMENSION_1D);
-        userMatrixDimension2D = getInt(CommonUP.USER_MATRIX_DIMENSION_2D);
-        userMatrixDimension3D = getInt(CommonUP.USER_MATRIX_DIMENSION_3D);
-        userMatrixDimension4D = getInt(CommonUP.USER_MATRIX_DIMENSION_4D);
-        acqMatrixDimension1D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_1D);
-        acqMatrixDimension2D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_2D);
-        acqMatrixDimension3D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D);
-        acqMatrixDimension4D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_4D);
-
-        off_center_distance_1D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D);
-        off_center_distance_2D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D);
-        off_center_distance_3D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D);
-
-        fov = getDouble(CommonUP.FIELD_OF_VIEW);
-        fovPhase = getDouble(CommonUP.FIELD_OF_VIEW_PHASE);
-        fov3d = getDouble(CommonUP.FIELD_OF_VIEW_3D);
-        sliceThickness = getDouble(CommonUP.SLICE_THICKNESS);
-        spacingBetweenSlice = getDouble(CommonUP.SPACING_BETWEEN_SLICE);
-
-        observation_time = getDouble(CommonUP.ACQUISITION_TIME_PER_SCAN);
-        tr = getDouble(CommonUP.REPETITION_TIME);
-        te = getDouble(CommonUP.ECHO_TIME);
-        echo_spacing = getDouble(CommonUP.ECHO_SPACING);
-
-        nb_preScan = getInt(CommonUP.DUMMY_SCAN);
-        nb_averages = getInt(CommonUP.NUMBER_OF_AVERAGES);
-        nb_shoot_3d = getInt(CommonUP.NUMBER_OF_SHOOT_3D);
-        echoTrainLength = getInt(CommonUP.ECHO_TRAIN_LENGTH);
-
-        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(CommonUP.TX_ROUTE).get(0));
-        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
-        getParam(CommonUP.MODALITY).setValue("MRI");
-    }
-
-    protected void beforeRouting() throws Exception {
+    public void beforeRouting() throws Exception {
         Log.debug(getClass(), "------------ BEFORE ROUTING -------------");
         // -----------------------------------------------
         // Ini RX parameters : nucleus, RX gain & frequencies
@@ -187,7 +159,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         // -----------------------------------------------
         // Ini Modality class
         // -----------------------------------------------
-        iniModel();
+        iniFinalModels();
 
         // -----------------------------------------------
         // Ini Imaging related
@@ -195,7 +167,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         iniImaging();
     }
 
-    protected void initAfterRouting() {
+    public void initAfterRouting() {
         // -----------------------------------------------
         // ini SeqParam basics
         // -----------------------------------------------
@@ -207,7 +179,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         iniSeqParamEnabled();
     }
 
-    protected void afterRouting() throws Exception {
+    public void afterRouting() throws Exception {
         Log.debug(getClass(), "------------ AFTER ROUTING -------------");
         // -----------------------------------------------
         // prep Imaging related
@@ -235,38 +207,28 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         //prepComments();
     }
 
-    protected void checkAndFireException() {
-    }
-
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  second-level  structures
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-    protected void iniTxRx() throws Exception {
-    }
+    protected abstract void iniModels();
 
-    protected void iniModel() throws Exception {
-    }
+    protected abstract void iniTxRx() throws Exception;
 
-    protected void iniImaging() throws Exception {
-    }
+    protected abstract void iniFinalModels() throws Exception;
 
-    protected void iniSeqParamBasics() {
-    }
+    protected abstract void iniImaging() throws Exception;
 
-    protected void iniSeqParamEnabled() {
-    }
+    protected abstract void iniSeqParamBasics();
 
-    protected void prepImaging() throws Exception {
-    }
+    protected abstract void iniSeqParamEnabled();
 
-    protected void prepModels() throws Exception {
-    }
+    protected abstract void prepImaging() throws Exception;
 
-    protected void prepSeqTiming() throws Exception {
-    }
+    protected abstract void prepModels() throws Exception;
 
-    protected void prepDicom() {
-    }
+    protected abstract void prepSeqTiming() throws Exception;
+
+    protected abstract void prepDicom();
 
     protected void prepComments() {
     }
@@ -274,21 +236,23 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     //--------------------------------------------------------------------------------------
     // basic functions
     //--------------------------------------------------------------------------------------
-    protected void setModel(List<String> modalNames, SeqPrep seqPrep) throws Exception {
-        this.modalNames = modalNames;
+    protected void setModels(List<String> modalNames, SeqPrep seqPrep) {
+        this.modelNames = modalNames;
         ModelFactory modelFactory = new ModelFactory();
 
-        if (this.modalNames != null) {
-            for (String modalName : this.modalNames) {
+        if (this.modelNames != null) {
+            for (String modalName : this.modelNames) {
                 ModelInterface eachModel = modelFactory.getModel(modalName, seqPrep);
                 eachModel.init();
-                models.put(modalName,eachModel);
+                models.put(modalName, eachModel);
             }
-            for (String modalName : this.modalNames) {
-                ModelInterface eachModel = modelFactory.getModel(modalName, seqPrep);
-                eachModel.initFinal();
-                models.put(modalName,eachModel);
-            }
+        }
+    }
+
+    protected void setSuggestedValFromListString(List<String> tx_shape, boolean bVal, GeneratorParamEnum ...UPs) {
+        for (GeneratorParamEnum UP : UPs) {
+            ((TextParam) getParam(UP)).setSuggestedValues(tx_shape);
+            ((TextParam) getParam(UP)).setRestrictedToSuggested(bVal);
         }
     }
 
@@ -336,198 +300,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         }
     }
 
-//    protected int[] satBandPrep(GeneratorParamEnum satbandOrientation, GeneratorParamEnum orientation, GeneratorParamEnum imageOrientationSubject) {
-//        int[] position_sli_ph_rea = new int[6];
-//
-//        boolean cranial = false;
-//        boolean caudal = false;
-//        boolean anterior = false;
-//        boolean posterior = false;
-//        boolean right = false;
-//        boolean left = false;
-//        if ("CRANIAL".equalsIgnoreCase(getText(satbandOrientation))) {
-//            cranial = true;
-//        } else if ("CAUDAL".equalsIgnoreCase(getText(satbandOrientation))) {
-//            caudal = true;
-//        } else if ("CRANIAL AND CAUDAL".equalsIgnoreCase(getText(satbandOrientation))) {
-//            cranial = true;
-//            caudal = true;
-//        } else if ("ANTERIOR".equalsIgnoreCase(getText(satbandOrientation))) {
-//            anterior = true;
-//        } else if ("POSTERIOR".equalsIgnoreCase(getText(satbandOrientation))) {
-//            posterior = true;
-//        } else if ("ANTERIOR AND POSTERIOR".equalsIgnoreCase(getText(satbandOrientation))) {
-//            anterior = true;
-//            posterior = true;
-//        } else if ("RIGHT".equalsIgnoreCase(getText(satbandOrientation))) {
-//            right = true;
-//        } else if ("LEFT".equalsIgnoreCase(getText(satbandOrientation))) {
-//            left = true;
-//        } else if ("RIGHT AND LEFT".equalsIgnoreCase(getText(satbandOrientation))) {
-//            right = true;
-//            left = true;
-//        } else if ("RIGHT AND LEFT".equalsIgnoreCase(getText(satbandOrientation))) {
-//            right = true;
-//            left = true;
-//        } else if ("ALL".equalsIgnoreCase(getText(satbandOrientation))) {
-//            cranial = true;
-//            caudal = true;
-//            anterior = true;
-//            posterior = true;
-//            right = true;
-//            left = true;
-//        }
-//
-//        position_sli_ph_rea[0] = 0;
-//        position_sli_ph_rea[1] = 0;
-//        position_sli_ph_rea[2] = 0;
-//        position_sli_ph_rea[3] = 0;
-//        position_sli_ph_rea[4] = 0;
-//        position_sli_ph_rea[5] = 0;
-//        if ("AXIAL".equalsIgnoreCase(getText(orientation))) {
-//            position_sli_ph_rea[0] = cranial ? 1 : 0;
-//            position_sli_ph_rea[1] = caudal ? 1 : 0;
-//            position_sli_ph_rea[2] = anterior ? 1 : 0;
-//            position_sli_ph_rea[3] = posterior ? 1 : 0;
-//            position_sli_ph_rea[4] = right ? 1 : 0;
-//            position_sli_ph_rea[5] = left ? 1 : 0;
-//        } else if ("SAGITTAL".equalsIgnoreCase(getText(orientation))) {
-//            position_sli_ph_rea[0] = left ? 1 : 0;
-//            position_sli_ph_rea[1] = right ? 1 : 0;
-//            position_sli_ph_rea[2] = anterior ? 1 : 0;
-//            position_sli_ph_rea[3] = posterior ? 1 : 0;
-//            position_sli_ph_rea[4] = cranial ? 1 : 0;
-//            position_sli_ph_rea[5] = caudal ? 1 : 0;
-//        } else if ("CORONAL".equalsIgnoreCase(getText(orientation))) {
-//            position_sli_ph_rea[0] = anterior ? 1 : 0;
-//            position_sli_ph_rea[1] = posterior ? 1 : 0;
-//            position_sli_ph_rea[2] = right ? 1 : 0;
-//            position_sli_ph_rea[3] = left ? 1 : 0;
-//            position_sli_ph_rea[4] = cranial ? 1 : 0;
-//            position_sli_ph_rea[5] = caudal ? 1 : 0;
-//        } else if ("OBLIQUE".equalsIgnoreCase(getText(orientation))) {
-//            List<Double> image_orientation = getListDouble(imageOrientationSubject);
-//            double[][] dir_ind = new double[3][3];
-//            for (int i = 0; i < 3; i++) {
-//                dir_ind[0][i] = image_orientation.get(i);
-//                dir_ind[1][i] = image_orientation.get(i + 3);
-//            }
-//            dir_ind[2][0] = dir_ind[0][1] * dir_ind[1][2] - dir_ind[0][2] * dir_ind[1][1];
-//            dir_ind[2][1] = dir_ind[0][2] * dir_ind[1][0] - dir_ind[0][0] * dir_ind[1][2];
-//            dir_ind[2][2] = dir_ind[0][0] * dir_ind[1][1] - dir_ind[0][1] * dir_ind[1][0];
-//            int i, j;
-//            int max_index = 0;
-//            double norm_vector_re = Math.sqrt(Math.pow(dir_ind[0][0], 2) + Math.pow(dir_ind[0][1], 2) + Math.pow(dir_ind[0][2], 2));
-//            double norm_vector_ph = Math.sqrt(Math.pow(dir_ind[1][0], 2) + Math.pow(dir_ind[1][1], 2) + Math.pow(dir_ind[1][2], 2));
-//            double norm_vector_sl = Math.sqrt(Math.pow(dir_ind[2][0], 2) + Math.pow(dir_ind[2][1], 2) + Math.pow(dir_ind[2][2], 2));
-//            //normalizing vectors
-//            dir_ind[0][0] = dir_ind[0][0] / norm_vector_re;
-//            dir_ind[0][1] = dir_ind[0][1] / norm_vector_re;
-//            dir_ind[0][2] = dir_ind[0][2] / norm_vector_re;
-//            dir_ind[1][0] = dir_ind[1][0] / norm_vector_ph;
-//            dir_ind[1][1] = dir_ind[1][1] / norm_vector_ph;
-//            dir_ind[1][2] = dir_ind[1][2] / norm_vector_ph;
-//            dir_ind[2][0] = dir_ind[2][0] / norm_vector_sl;
-//            dir_ind[2][1] = dir_ind[2][1] / norm_vector_sl;
-//            dir_ind[2][2] = dir_ind[2][2] / norm_vector_sl;
-//            for (i = 0; i < 3; i++) {
-//                for (j = 0; j < 3; j++) {
-//                    System.out.println("dir_ind[" + i + "][" + j + "]" + dir_ind[i][j]);
-//                }
-//            }
-//
-//            // System.out.println(" direction index and dir ind:  "+direction_index[2]+" "+dir_ind[0][2]);
-//            int[] max_vector = new int[3];
-//
-//            // read, phase and slice vector which component has the largest value
-//            for (i = 0; i < 3; i++) {
-//                for (j = 0; j < 3; j++) {
-//                    if (Math.abs(dir_ind[i][j]) >= Math.abs(dir_ind[i][max_index])) {
-//                        max_index = j;
-//                    }
-//                }
-//                max_vector[i] = max_index; // storing each vector's maximum value index
-//                //System.out.println("max_vector["+i+"]"+max_vector[i]);
-//            }
-//
-//            boolean[][] anatomy_to_local_mx = new boolean[6][6];
-//
-//            for (i = 0; i < 6; i++) {
-//                for (j = 0; j < 6; j++) {
-//                    anatomy_to_local_mx[i][j] = false;
-//                }
-//            }
-//
-//            for (i = 0; i < 3; i++) {
-//
-//                if (dir_ind[i][max_vector[i]] < 0) {
-//                    anatomy_to_local_mx[i][max_vector[i] + 3] = true;
-//                    anatomy_to_local_mx[i + 3][max_vector[i]] = true;
-//                } else {
-//                    anatomy_to_local_mx[i][max_vector[i]] = true;
-//                    anatomy_to_local_mx[i + 3][max_vector[i] + 3] = true;
-//                }
-//            }
-//            boolean[] local_vector = new boolean[6];
-//
-//            local_vector[0] = false;
-//            local_vector[1] = false;
-//            local_vector[2] = false;
-//            local_vector[3] = false;
-//            local_vector[4] = false;
-//            local_vector[5] = false;
-//
-//            boolean[] anatomy_vector = new boolean[6];
-//
-//            anatomy_vector[0] = right;
-//            anatomy_vector[1] = posterior;
-//            anatomy_vector[2] = caudal;
-//            anatomy_vector[3] = left;
-//            anatomy_vector[4] = anterior;
-//            anatomy_vector[5] = cranial;
-//
-//            boolean sum;
-//            for (i = 0; i < 6; i++) {
-//                sum = false;
-//                for (j = 0; j < 6; j++) {
-//                    sum = sum || (anatomy_to_local_mx[i][j] & anatomy_vector[j]);
-//                    //	System.out.println("sum= "+sum+" + "+anatomy_to_local_mx[i][j]+"*"+anatomy_vector[j]);
-//                }
-//                local_vector[i] = sum;
-//                // System.out.println("local vector "+local_vector[i]);
-//
-//            }
-//            position_sli_ph_rea[4] = local_vector[0] ? 1 : 0;
-//            position_sli_ph_rea[2] = local_vector[1] ? 1 : 0;
-//            position_sli_ph_rea[0] = local_vector[2] ? 1 : 0;
-//            position_sli_ph_rea[5] = local_vector[3] ? 1 : 0;
-//            position_sli_ph_rea[3] = local_vector[4] ? 1 : 0;
-//            position_sli_ph_rea[1] = local_vector[5] ? 1 : 0;
-//
-//            // System.out.println("read+ "+position_sli_ph_rea[4]+" phase+ "+position_sli_ph_rea[2]+" slice+ "+position_sli_ph_rea[0]);
-//            // System.out.println("read- "+position_sli_ph_rea[5]+" phase- "+position_sli_ph_rea[3]+" slice- "+position_sli_ph_rea[1]);
-//        }
-//        boolean is_switch = getBoolean(CommonUP.SWITCH_READ_PHASE);
-//        boolean phase_pos_temp = position_sli_ph_rea[2] == 1;
-//        boolean phase_neg_temp = position_sli_ph_rea[3] == 1;
-//        boolean read_pos_temp = position_sli_ph_rea[4] == 1;
-//        boolean read_neg_temp = position_sli_ph_rea[5] == 1;
-//        if (is_switch) {
-//            position_sli_ph_rea[2] = read_pos_temp ? 1 : 0;
-//            position_sli_ph_rea[3] = read_neg_temp ? 1 : 0;
-//            position_sli_ph_rea[4] = phase_pos_temp ? 1 : 0;
-//            position_sli_ph_rea[5] = phase_neg_temp ? 1 : 0;
-//        }
-//        return position_sli_ph_rea;
-//    }
-
     public double getTx_bandwidth_factor(GeneratorParamEnum tx_shape, GeneratorParamEnum tx_bandwith_factor_param, GeneratorParamEnum tx_bandwith_factor_param3d) {
-//        double tx_bandwidth_factor;
-//        String tx_shape_name = pl.getTextParam(tx_shape.name()).getValue();
-//
-//        List<Double> tx_bandwith_factor_table = pl.getListNumberParam(tx_bandwith_factor_param.name()).getValue().stream().map(Number::doubleValue).collect(Collectors.toList());
-//        List<Double> tx_bandwith_factor_3D_table = pl.getListNumberParam(tx_bandwith_factor_param3d.name()).getValue().stream().map(Number::doubleValue).collect(Collectors.toList());
-
         double tx_bandwidth_factor;
         String tx_shape_name = getText(tx_shape);
 
@@ -788,6 +561,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         }
         return table;
     }
+
     @Override
     public int getInt(GeneratorParamEnum userParam) {
         return super.getInt(userParam);
@@ -846,6 +620,11 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     @Override
     protected <T extends Param> T getSequenceParam(GeneratorSequenceParamEnum sequenceParam) {
         return super.getSequenceParam(sequenceParam);
+    }
+
+    @Override
+    protected <T extends Table> T getSequenceTable(GeneratorSequenceParamEnum sequenceTable) {
+        return super.getSequenceTable(sequenceTable);
     }
 
     @Override

@@ -1,15 +1,13 @@
 package rs2d.sequence.common;
 
 import rs2d.spinlab.instrument.Instrument;
+import rs2d.spinlab.instrument.InstrumentTxChannel;
 import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequenceGenerator.util.GradientRotation;
 import rs2d.spinlab.sequenceGenerator.util.Hardware;
 import rs2d.spinlab.tools.param.NumberParam;
-import rs2d.spinlab.tools.param.TextParam;
 import rs2d.spinlab.tools.utility.GradientAxe;
 import rs2d.spinlab.tools.utility.Nucleus;
-
-import java.util.List;
 
 import static java.util.Arrays.asList;
 
@@ -20,36 +18,78 @@ import static java.util.Arrays.asList;
  * V1.3- 2021-3-10 XG
  * V1.2- 2021-2-26 XG
  * V1.1- 2021-1-11 XG
- *
+ * <p>
  * Override some of the Second-level structure
  * Build Third-level and Fourth-level structure
  * and provide it to different MR sequences
- *
  */
 
 
 public abstract class SeqPrep extends SeqPrepBasics {
-    protected SeqPrep() {}
+
+    protected SeqPrep() {
+        tx_shape = asList("HARD", "GAUSSIAN", "SINC3", "SINC5", "SLR_8_5152", "SLR_4_2576");
+        nb_shape_points = 128;
+    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                   second-level  structures (override)
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     @Override
-    public void init() {
-        super.init();
-        List<String> tx_shape = asList(
-                "HARD",
-                "GAUSSIAN",
-                "SINC3",
-                "SINC5",
-                "SLR_8_5152",
-                "SLR_4_2576");
-        ((TextParam) getParam(CommonUP.TX_SHAPE)).setSuggestedValues(tx_shape);
-        ((TextParam) getParam(CommonUP.TX_SHAPE)).setRestrictedToSuggested(true);
+    protected void iniModels() {
+    }
+
+    @Override
+    public void initUserParam() {
+        isKSCenterMode = getBoolean(CommonUP.KS_CENTER_MODE);
+        isEnablePhase3D = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE_3D);
+        isEnablePhase = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE);
+        isEnableSlice = getBoolean(CommonUP.GRADIENT_ENABLE_SLICE);
+        isEnableRead = getBoolean(CommonUP.GRADIENT_ENABLE_READ);
+        isMultiplanar = getBoolean(CommonUP.MULTI_PLANAR_EXCITATION);
+        isFovDoubled = getBoolean(CommonUP.FOV_DOUBLED);
+
+        userMatrixDimension1D = getInt(CommonUP.USER_MATRIX_DIMENSION_1D);
+        userMatrixDimension2D = getInt(CommonUP.USER_MATRIX_DIMENSION_2D);
+        userMatrixDimension3D = getInt(CommonUP.USER_MATRIX_DIMENSION_3D);
+        userMatrixDimension4D = getInt(CommonUP.USER_MATRIX_DIMENSION_4D);
+        acqMatrixDimension1D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_1D);
+        acqMatrixDimension2D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_2D);
+        acqMatrixDimension3D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D);
+        acqMatrixDimension4D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_4D);
+
+        off_center_distance_1D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D);
+        off_center_distance_2D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D);
+        off_center_distance_3D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D);
+
+        fov = getDouble(CommonUP.FIELD_OF_VIEW);
+        fovPhase = getDouble(CommonUP.FIELD_OF_VIEW_PHASE);
+        fov3d = getDouble(CommonUP.FIELD_OF_VIEW_3D);
+        sliceThickness = getDouble(CommonUP.SLICE_THICKNESS);
+        spacingBetweenSlice = getDouble(CommonUP.SPACING_BETWEEN_SLICE);
+
+        observation_time = getDouble(CommonUP.ACQUISITION_TIME_PER_SCAN);
+        tr = getDouble(CommonUP.REPETITION_TIME);
+        te = getDouble(CommonUP.ECHO_TIME);
+        echo_spacing = getDouble(CommonUP.ECHO_SPACING);
+        grad_rise_time = getDouble(CommonUP.GRADIENT_RISE_TIME);
+
+        nb_preScan = getInt(CommonUP.DUMMY_SCAN);
+        nb_averages = getInt(CommonUP.NUMBER_OF_AVERAGES);
+        nb_shoot_3d = getInt(CommonUP.NUMBER_OF_SHOOT_3D);
+        echoTrainLength = getInt(CommonUP.ECHO_TRAIN_LENGTH);
+
+        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(CommonUP.TX_ROUTE).get(0));
+        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
+        getParam(CommonUP.MODALITY).setValue("MRI");
     }
 
     @Override
     protected void iniTxRx() throws Exception {
+        getParam(CommonUP.MAGNETIC_FIELD_STRENGTH).setDefaultValue(Instrument.instance().getDevices().getMagnet().getField());
+        getParam(CommonUP.DIGITAL_FILTER_SHIFT).setDefaultValue(Instrument.instance().getDevices().getCameleon().getAcquDeadPointCount());
+        getParam(CommonUP.DIGITAL_FILTER_REMOVED).setDefaultValue(Instrument.instance().getDevices().getCameleon().isRemoveAcquDeadPoint());
+
         nucleus = Nucleus.getNucleusForName(getText(CommonUP.NUCLEUS_1));
         protonFrequency = Instrument.instance().getDevices().getMagnet().getProtonFrequency();
         observeFrequency = nucleus.getFrequency(protonFrequency) + getDouble(CommonUP.OFFSET_FREQ_1);
@@ -69,6 +109,18 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
         set(CommonSP.Tx_nucleus, nucleus);
         getParam(CommonUP.OBSERVED_NUCLEUS).setValue(nucleus);
+    }
+
+    @Override
+    protected void iniFinalModels() throws Exception {
+        if (this.modelNames != null) {
+            for (String modalName : this.modelNames) {
+                ModelInterface eachModel = models.get(modalName);
+                eachModel.initFinal();
+                models.put(modalName, eachModel);
+                System.out.println(modalName + " " + eachModel.isEnabled());
+            }
+        }
     }
 
     @Override
@@ -117,76 +169,37 @@ public abstract class SeqPrep extends SeqPrepBasics {
         prepImagingGrads();
     }
 
-//    @Override
-//    protected void prepModels() throws Exception {
-//        //--------------------------------------------------------------------------------------
-//        // get Flyback gradient
-//        //--------------------------------------------------------------------------------------
-//        getFlybackGrad();
-//
-//        //--------------------------------------------------------------------------------------
-//        // get External triggering
-//        //--------------------------------------------------------------------------------------
-//        getExtTrig();
-//
-//        // -------------------------------------------------------------------------------------------------
-//        // get Inversion Recovery gradients
-//        // -------------------------------------------------------------------------------------------------
-//        getIR();
-//
-//        //--------------------------------------------------------------------------------------
-//        // get Fat Sat gradients
-//        //--------------------------------------------------------------------------------------
-//        getFatSatGrad();
-//
-//        // ------------------------------------------------------------------
-//        // get blanking smartTTL_FatSat_table
-//        // ------------------------------------------------------------------
-//        //prepFatSatSmartTTL();
-//
-//        //--------------------------------------------------------------------------------------
-//        // get Flow
-//        //--------------------------------------------------------------------------------------
-//        getFlow();
-//
-//        //--------------------------------------------------------------------------------------
-//        // get Sat Band gradients
-//        //--------------------------------------------------------------------------------------
-//        getSatBandGrad();
-//
-//        //--------------------------------------------------------------------------------------
-//        // get Models Final
-//        //--------------------------------------------------------------------------------------
-//        getModelsFinal();
-//    }
-
     @Override
     protected void prepModels() throws Exception {
-        if (modalNames != null) {
-            for (String modalName : modalNames) {
-                models.get(modalName).prep();
-                if (models.get(modalName).isEnabled()) {
-                    if (models.get(modalName).getRfPulses() != null)
-                        rfPulses.put(models.get(modalName).getRfPulses().getPower(), models.get(modalName).getRfPulses());
+        if (modelNames != null) {
+            for (String modalName : modelNames) {
+                for (int icyc = 0; icyc < 2; icyc++) {
+                    //cyc it 2 times in case of dependencies
+                    models.get(modalName).prep();
+                }
+                if (models.get(modalName).getRfPulses() != null) {
+                    rfPulses.add(models.get(modalName).getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
+                    rfPulsesTree.put(models.get(modalName).getRfPulses().getPower(), models.get(modalName).getRfPulses());
                 }
             }
+        }
 
-            if (getBoolean(CommonUP.TX_AMP_ATT_AUTO)) {
-                RFPulse pulseMaxPower = rfPulses.get(rfPulses.lastKey());
-                pulseMaxPower.prepAtt(80, getListInt(CommonUP.TX_ROUTE));
+        // we find MaxPower for all pulses including pulses in both model and imaging parts
+        if (getBoolean(CommonUP.TX_AMP_ATT_AUTO)) {
+            RFPulse pulseMaxPower = rfPulsesTree.get(rfPulsesTree.lastKey());
+            pulseMaxPower.prepAtt(80, getListInt(CommonUP.TX_ROUTE));
 
-                for (Double key : rfPulses.keySet()) {
-                    System.out.println("key "+key + " power "+ rfPulses.get(key).toString());
-
-                    rfPulses.get(key).prepTxAmp(getListInt(CommonUP.TX_ROUTE));
-                }
-            }
-
-            for (String modalName : modalNames) {
-                models.get(modalName).prepFinal();
+            for (RFPulse eachPulse : rfPulses) {
+                eachPulse.prepTxAmp(getListInt(CommonUP.TX_ROUTE));
             }
 
             getUPDisp();
+        }
+
+        if (modelNames != null) {
+            for (String modalName : modelNames) {
+                models.get(modalName).prepFinal();
+            }
         }
     }
 
@@ -394,7 +407,6 @@ public abstract class SeqPrep extends SeqPrepBasics {
     }
 
     protected void getAcq3D() {
-        userParams.addParam(new NumberParam());
     }
 
     protected void regetAcq3D() {
@@ -446,7 +458,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
     protected void getSpoilerGrad() {
     }
 
-//    protected void getFlybackGrad() {
+    //    protected void getFlybackGrad() {
 //    }
 //
 //    protected void getExtTrig() throws Exception {
