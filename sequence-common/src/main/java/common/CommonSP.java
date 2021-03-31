@@ -1,0 +1,41 @@
+package common;
+
+import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+
+public enum CommonSP implements GeneratorSequenceParamEnum{
+    Tx_att,
+    Rx_gain,
+    Rx_freq_offset,
+    Rx_phase,
+    Intermediate_frequency,
+    Spectral_width,
+    Tx_frequency,
+    Tx_nucleus,
+    Time_tx,
+    Time_rx,
+    Time_min_instruction,
+    Tx_amp,
+    Tx_phase,
+    Tx_shape,
+    Tx_shape_phase,
+    Tx_freq_offset,
+    Tx_amp_180,
+    Tx_phase_180,
+    Tx_shape_180,
+    Tx_shape_phase_180,
+    LO_att,
+    Grad_shape_rise_up,
+    Grad_shape_rise_down,
+    Gradient_axe_phase,
+    Gradient_axe_read,
+    Time_grad_ramp,
+    Pre_scan,
+    Nb_1d,
+    Nb_2d,
+    Nb_3d,
+    Nb_4d,
+    Nb_point,
+    Nb_echo,
+    Nb_interleaved_slice,
+    ;
+}
