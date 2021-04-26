@@ -904,6 +904,7 @@ public class Gradient {
         int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
         double[] newTable = new double[traj.length / 2];
         System.out.println("traj.size() " + traj.length);
+
         for (int j = 0; j < traj.length / 2; j++) {
             newTable[j] = amplitudeArray[traj[j * 2 + 1]];
         }

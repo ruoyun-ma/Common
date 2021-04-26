@@ -66,6 +66,8 @@ public class RFPulse {
     private Nucleus nucleus;
     private double powerPulse = Double.NaN;
 
+    private double sincGenRampSlope = 0.2;
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -323,7 +325,7 @@ public class RFPulse {
         this.nucleus = nucleus;
         boolean test_change_time = true;
         //if (txAtt == -1) { //XG: we not allow to skip powercheck anymore, 2021/3/24
-            test_change_time = calculatePower();
+        test_change_time = calculatePower();
         //}
         return test_change_time;
     }
@@ -352,7 +354,7 @@ public class RFPulse {
         double instrument_power = (flipAngle < 135 ? pulse.getHardPulse90().y : pulse.getHardPulse180().y) / power_factor;
         powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
         if (powerPulse > pulse.getMaxRfPowerPulsed()) {  // TX LENGTH 90 MIN
-            System.out.println(powerPulse  +"  "+pulseDuration);
+            System.out.println(powerPulse + "  " + pulseDuration);
             pulseDuration = ceilToSubDecimal(instrument_length / Math.sqrt(pulse.getMaxRfPowerPulsed() / (instrument_power * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2))), 6);
             setSequenceTableSingleValue(timeTable, pulseDuration);
             powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
@@ -378,7 +380,7 @@ public class RFPulse {
             // available after V1.214
             txAtt = 1 + (int) TxMath.getTxAttFor(powerPulse, txCh, tx_amp_180_desired, observeFrequency);
 
-            txAtt = txAtt > 63 ?63 : txAtt;
+            txAtt = txAtt > 63 ? 63 : txAtt;
             System.out.println(" txAtt " + txAtt);
 
         } catch (Exception e) {
@@ -399,7 +401,7 @@ public class RFPulse {
      */
     public double prepTxAmp(List<Integer> txRoute) {
         //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
-            txAtt = ((NumberParam) attParam).getValue().intValue();
+        txAtt = ((NumberParam) attParam).getValue().intValue();
         //}
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
@@ -417,16 +419,16 @@ public class RFPulse {
      */
     public double prepTxAmpMultiFA(List<Integer> txRoute, double[] FA_list, Order order) {
         //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
-            txAtt = ((NumberParam) attParam).getValue().intValue();
+        txAtt = ((NumberParam) attParam).getValue().intValue();
         //}
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
         setSequenceTableValues(amplitudeTable, order);
         for (int i = 0; i < FA_list.length; i++) {
-            if (Arrays.stream(FA_list).max().getAsDouble()>=135.0){
+            if (Arrays.stream(FA_list).max().getAsDouble() >= 135.0) {
                 tx_amp = tx_amp180 * FA_list[i] / 180;
-            }else{
+            } else {
                 tx_amp = tx_amp90 * FA_list[i] / 90;
             }
             //tx_amp = (FA_list[i] < 135 ? tx_amp90 : tx_amp180) * FA_list[i] / (FA_list[i] < 135 ? 90 : 180);
@@ -474,8 +476,8 @@ public class RFPulse {
             shapePhase.setFirst(0);
 
         } else if ("RAMP".equalsIgnoreCase(pulseName)) {
-            setTableValuesFromSincGenRamp(shape, numberOfPoint, 3, 100, true, "Hamming", 0.2);
-            setTableValuesFromSincGenRampPhase(shapePhase, numberOfPoint, 3, 100, true, "Hamming", 0.2);
+            setTableValuesFromSincGenRamp(shape, numberOfPoint, 3, 100, true, "Hamming", /*0.2*/sincGenRampSlope);
+            setTableValuesFromSincGenRampPhase(shapePhase, numberOfPoint, 3, 100, true, "Hamming", /*0.2*/sincGenRampSlope);
         } else if ("SLR_8_5152".equalsIgnoreCase(pulseName)) {
             shape.clear();
             shapePhase.clear();
@@ -686,6 +688,9 @@ public class RFPulse {
 
     }
 
+    public void setSincGenRampSlope(double val) {
+        sincGenRampSlope = val;
+    }
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Offset Fequency
@@ -744,6 +749,24 @@ public class RFPulse {
 //
 
 
+    }
+
+    public void reoderOffsetFreq(int slicesAcquiredInSingleScan) {
+        if (Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * slicesAcquiredInSingleScan != numberOfFreqOffset)
+            Log.error(getClass(),"floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * slicesAcquiredInSingleScan != numberOfFreqOffset");
+
+        double[] offset_table = new double[numberOfFreqOffset];
+        int[] sliceNumber_table = new int[numberOfFreqOffset];
+        for (int i = 0; i < Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan); i++) {
+            for (int j = 0; j < slicesAcquiredInSingleScan; j++) {
+                sliceNumber_table[slicesAcquiredInSingleScan * i + j] = i + (int)Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * j;
+            }
+        }
+
+        for (int k = 0; k < numberOfFreqOffset; k++) {
+            offset_table[k] = txFrequencyOffsetTable[sliceNumber_table[k]];
+        }
+        txFrequencyOffsetTable = offset_table;
     }
 
     public double calculateOffsetFreq(double grad_amp_mTpm, double offCenterDistance) {

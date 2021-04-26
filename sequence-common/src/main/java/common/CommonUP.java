@@ -22,7 +22,6 @@ public enum CommonUP implements GeneratorParamEnum {
     DIGITAL_FILTER_SHIFT,
     DIGITAL_FILTER_REMOVED,
 
-
     // Enables
     KS_CENTER_MODE,
     MULTI_PLANAR_EXCITATION,
@@ -40,6 +39,7 @@ public enum CommonUP implements GeneratorParamEnum {
     PHASE_FIELD_OF_VIEW_RATIO,
     FOV_RATIO_PHASE,
     SWITCH_READ_PHASE,
+    SWITCH_READ_SLICE,
     SLICE_THICKNESS,
     SPACING_BETWEEN_SLICE,
     OFF_CENTER_FIELD_OF_VIEW_EFF,
@@ -95,15 +95,27 @@ public enum CommonUP implements GeneratorParamEnum {
     TX_LENGTH_90,
     TX_LENGTH_180,
     TX_LENGTH,
+    TX_ATT,
+    TX_AMP,
+    TX_AMP_90,
+    TX_AMP_180,
     FLIP_ANGLE,
     FLIP_ANGLE_REFOC,
 
     // Miscellaneous
     SEQUENCE_VERSION,
+    SEQUENCE_TIME,
     SEQ_DESCRIPTION,
     MODALITY,
     TRANSFORM_PLUGIN,
-    TX_AMP_ATT_AUTO;
+    TX_AMP_ATT_AUTO,
+    PHASE_RESET,
+    PARTIAL_OVERSAMPLING,
+    MULTISERIES_PARAMETER_VALUE,
+    MULTISERIES_PARAMETER_NAME,
+    ACQUISITION_TIME_OFFSET,
+    PREPHASING_READ_GRADIENT_RATIO,
+    ;
 
 
     @Override

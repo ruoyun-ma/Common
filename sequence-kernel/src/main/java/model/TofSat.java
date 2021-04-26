@@ -6,6 +6,10 @@ import rs2d.spinlab.tools.param.Param;
 
 import common.*;
 import kernel.*;
+
+import java.util.ArrayList;
+import java.util.List;
+
 import static common.CommonUP.*;
 import static common.CommonSP.*;
 
@@ -25,7 +29,11 @@ public class TofSat extends SatBand {
         TOF2D_SB_DISTANCE_FROM_SLICE,
         TOF2D_SB_POSITION,
         TOF2D_SB_OFFSET,
-        TOF2D_SB_MT_FLIP_ANGLE, //we actually only use it for 3D, just to keep the name in line with old 2D stuff.
+        TOF3D_MT_FLIP_ANGLE,
+        TOF3D_TX_RAMP_SLOPE,
+        TOF3D_MOTSA_OVERLAP,
+        TOF3D_EXT_SHIRNK_FACTOR,
+        TOF3D_MT_TX_LENGTH,
         TOF2D_FLOW_VELOCITY,
         TOF2D_FLOW_TAU,
         ;
@@ -58,6 +66,9 @@ public class TofSat extends SatBand {
                 parent.getParam(SatBand.UP.SATBAND_ENABLED).setValue(isSatBandEnabled);
             }
         }
+        List<String> tmp_tx_shape = new ArrayList<>(parent.tx_shape);
+        tmp_tx_shape.add("RAMP");
+        parent.tx_shape = tmp_tx_shape;
     }
 
     @Override
@@ -84,8 +95,9 @@ public class TofSat extends SatBand {
             double sat_flow_velocity = parent.getDouble(UP.TOF2D_FLOW_VELOCITY);
             double sat_flow_time = sat_flow_dist / sat_flow_velocity;
             double time = 0.0;
-            if (parent.hasParam(UP.TOF2D_FLOW_TAU) && parent.getDouble(UP.TOF2D_FLOW_TAU) > 0.0) {
+            if (parent.hasParam(UP.TOF2D_FLOW_TAU) && parent.roundToDecimal(parent.getDouble(UP.TOF2D_FLOW_TAU),6) >= parent.minInstructionDelay) {
                 time = parent.getDouble(UP.TOF2D_FLOW_TAU);
+                sat_flow_time_corr = parent.getDouble(UP.TOF2D_FLOW_TAU);
             } else {
                 //                TimeEvents.getTimeBetweenEvents(parent.getSequence(), Events.LoopSatBandEnd.ID - 1, Events.P90.ID - 3)
 //                        + TimeEvents.getTimeBetweenEvents(getSequence(), Events.P90.ID - 2, Events.Acq.ID);//(real index - 1) in the argument instead of real index
@@ -93,23 +105,24 @@ public class TofSat extends SatBand {
                         + (parent.hasParam(TX_LENGTH_90) ? parent.getDouble(TX_LENGTH_90) : parent.getDouble(TX_LENGTH)) / 2
                         + parent.getDouble(ECHO_TIME)
                         + parent.getSequenceTable(Time_rx).get(0).doubleValue()/2;
-            }
-            if (parent.models.containsKey("SatBand")) {
-                time += parent.getSequenceTable(SatBand.SP.Time_delay_sb).get(0).doubleValue();
-            }
-            if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
-                time += parent.models.get("FatSatWep").getDuration();
-            } else if (parent.models.containsKey("FatSat")) {
-                time += parent.models.get("FatSat").getDuration();
-            }
-            if (parent.models.containsKey("InvRec")) {
-                time += parent.getSequenceTable(InvRec.SP.Time_TI_delay).getMaxValue();
-            }
+
+                if (parent.models.containsKey("SatBand")) {
+                    time += parent.getSequenceTable(SatBand.SP.Time_delay_sb).get(0).doubleValue();
+                }
+                if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
+                    time += parent.models.get("FatSatWep").getDuration();
+                } else if (parent.models.containsKey("FatSat")) {
+                    time += parent.models.get("FatSat").getDuration();
+                }
+                if (parent.models.containsKey("InvRec")) {
+                    time += parent.getSequenceTable(InvRec.SP.Time_TI_delay).getMaxValue();
+                }
 //                System.out.println("time" + time);
 //                System.out.println("sat_flow_time" + sat_flow_time);
-            sat_flow_time_corr = sat_flow_time - time;
-            sat_flow_time_corr = (sat_flow_time_corr < 0) ? 0.0001 : sat_flow_time_corr;
+                sat_flow_time_corr = sat_flow_time - time;
+                sat_flow_time_corr = (sat_flow_time_corr < 0) ? 0.0001 : sat_flow_time_corr;
 //                System.out.println("sat_flow_time_corr" + sat_flow_time_corr);
+            }
         }
         parent.set(SP.Time_flow, sat_flow_time_corr);
     }

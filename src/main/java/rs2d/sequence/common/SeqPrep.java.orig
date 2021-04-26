@@ -1,20 +1,15 @@
-package kernel;
+package rs2d.sequence.common;
 
 import rs2d.spinlab.instrument.Instrument;
 import rs2d.spinlab.instrument.InstrumentTxChannel;
 import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequenceGenerator.util.GradientRotation;
 import rs2d.spinlab.sequenceGenerator.util.Hardware;
+import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.utility.GradientAxe;
 import rs2d.spinlab.tools.utility.Nucleus;
 
 import static java.util.Arrays.asList;
-
-import common.*;
-import model.*;
-
-import static common.CommonUP.*;
-import static common.CommonSP.*;
 
 /**
  * Abstract Class SeqPrep
@@ -32,7 +27,7 @@ import static common.CommonSP.*;
 
 public abstract class SeqPrep extends SeqPrepBasics {
 
-    public SeqPrep() {
+    protected SeqPrep() {
         tx_shape = asList("HARD", "GAUSSIAN", "SINC3", "SINC5", "SLR_8_5152", "SLR_4_2576");
         nb_shape_points = 128;
     }
@@ -40,83 +35,85 @@ public abstract class SeqPrep extends SeqPrepBasics {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                   second-level  structures (override)
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
-
-    @Override
-    public void initUserParam() {
-        isKSCenterMode = getBoolean(KS_CENTER_MODE);
-        isEnablePhase3D = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE_3D);
-        isEnablePhase = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE);
-        isEnableSlice = getBoolean(GRADIENT_ENABLE_SLICE);
-        isEnableRead = getBoolean(GRADIENT_ENABLE_READ);
-        isMultiplanar = getBoolean(MULTI_PLANAR_EXCITATION);
-        isFovDoubled = getBoolean(FOV_DOUBLED);
-
-        userMatrixDimension1D = getInt(USER_MATRIX_DIMENSION_1D);
-        userMatrixDimension2D = getInt(USER_MATRIX_DIMENSION_2D);
-        userMatrixDimension3D = getInt(USER_MATRIX_DIMENSION_3D);
-        userMatrixDimension4D = getInt(USER_MATRIX_DIMENSION_4D);
-        acqMatrixDimension1D = getInt(ACQUISITION_MATRIX_DIMENSION_1D);
-        acqMatrixDimension2D = getInt(ACQUISITION_MATRIX_DIMENSION_2D);
-        acqMatrixDimension3D = getInt(ACQUISITION_MATRIX_DIMENSION_3D);
-        acqMatrixDimension4D = getInt(ACQUISITION_MATRIX_DIMENSION_4D);
-        off_center_distance_1D = getDouble(OFF_CENTER_FIELD_OF_VIEW_1D);
-        off_center_distance_2D = getDouble(OFF_CENTER_FIELD_OF_VIEW_2D);
-        off_center_distance_3D = getDouble(OFF_CENTER_FIELD_OF_VIEW_3D);
-
-        fov = getDouble(FIELD_OF_VIEW);
-        fovPhase = getDouble(FIELD_OF_VIEW_PHASE);
-        fov3d = getDouble(FIELD_OF_VIEW_3D);
-        sliceThickness = getDouble(SLICE_THICKNESS);
-        spacingBetweenSlice = getDouble(SPACING_BETWEEN_SLICE);
-
-        observation_time = getDouble(ACQUISITION_TIME_PER_SCAN);
-        tr = getDouble(REPETITION_TIME);
-        te = getDouble(ECHO_TIME);
-        echo_spacing = getDouble(ECHO_SPACING);
-        grad_rise_time = getDouble(GRADIENT_RISE_TIME);
-
-        nb_preScan = getInt(DUMMY_SCAN);
-        nb_averages = getInt(NUMBER_OF_AVERAGES);
-        nb_shoot_3d = getInt(NUMBER_OF_SHOOT_3D);
-        echoTrainLength = getInt(ECHO_TRAIN_LENGTH);
-
-        spectralWidth = getDouble(SPECTRAL_WIDTH);
-        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(TX_ROUTE).get(0));
-        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
-        if (hasParam(MODALITY)) {
-            getParam(MODALITY).setValue("MRI");
-        }
-    }
-
     @Override
     protected void iniModels() {
     }
 
     @Override
-    protected void iniTxRx() throws Exception {
-        getParam(MAGNETIC_FIELD_STRENGTH).setDefaultValue(Instrument.instance().getDevices().getMagnet().getField());
-        getParam(DIGITAL_FILTER_SHIFT).setDefaultValue(Instrument.instance().getDevices().getCameleon().getAcquDeadPointCount());
-        getParam(DIGITAL_FILTER_REMOVED).setDefaultValue(Instrument.instance().getDevices().getCameleon().isRemoveAcquDeadPoint());
+    public void initUserParam() {
+        isKSCenterMode = getBoolean(CommonUP.KS_CENTER_MODE);
+        isEnablePhase3D = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE_3D);
+        isEnablePhase = !isKSCenterMode && getBoolean(CommonUP.GRADIENT_ENABLE_PHASE);
+        isEnableSlice = getBoolean(CommonUP.GRADIENT_ENABLE_SLICE);
+        isEnableRead = getBoolean(CommonUP.GRADIENT_ENABLE_READ);
+        isMultiplanar = getBoolean(CommonUP.MULTI_PLANAR_EXCITATION);
+        isFovDoubled = getBoolean(CommonUP.FOV_DOUBLED);
 
-        nucleus = Nucleus.getNucleusForName(getText(NUCLEUS_1));
+        userMatrixDimension1D = getInt(CommonUP.USER_MATRIX_DIMENSION_1D);
+        userMatrixDimension2D = getInt(CommonUP.USER_MATRIX_DIMENSION_2D);
+        userMatrixDimension3D = getInt(CommonUP.USER_MATRIX_DIMENSION_3D);
+        userMatrixDimension4D = getInt(CommonUP.USER_MATRIX_DIMENSION_4D);
+        acqMatrixDimension1D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_1D);
+        acqMatrixDimension2D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_2D);
+        acqMatrixDimension3D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D);
+        acqMatrixDimension4D = getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_4D);
+
+        off_center_distance_1D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D);
+        off_center_distance_2D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D);
+        off_center_distance_3D = getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D);
+
+        fov = getDouble(CommonUP.FIELD_OF_VIEW);
+        fovPhase = getDouble(CommonUP.FIELD_OF_VIEW_PHASE);
+        fov3d = getDouble(CommonUP.FIELD_OF_VIEW_3D);
+        sliceThickness = getDouble(CommonUP.SLICE_THICKNESS);
+        spacingBetweenSlice = getDouble(CommonUP.SPACING_BETWEEN_SLICE);
+
+        observation_time = getDouble(CommonUP.ACQUISITION_TIME_PER_SCAN);
+        tr = getDouble(CommonUP.REPETITION_TIME);
+        te = getDouble(CommonUP.ECHO_TIME);
+        echo_spacing = getDouble(CommonUP.ECHO_SPACING);
+        grad_rise_time = getDouble(CommonUP.GRADIENT_RISE_TIME);
+
+<<<<<<< HEAD
+=======
+        spectralWidth = getDouble(CommonUP.SPECTRAL_WIDTH);
+
+>>>>>>> 499ca81... Version 1.2
+        nb_preScan = getInt(CommonUP.DUMMY_SCAN);
+        nb_averages = getInt(CommonUP.NUMBER_OF_AVERAGES);
+        nb_shoot_3d = getInt(CommonUP.NUMBER_OF_SHOOT_3D);
+        echoTrainLength = getInt(CommonUP.ECHO_TRAIN_LENGTH);
+
+        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(CommonUP.TX_ROUTE).get(0));
+        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
+        getParam(CommonUP.MODALITY).setValue("MRI");
+    }
+
+    @Override
+    protected void iniTxRx() throws Exception {
+        getParam(CommonUP.MAGNETIC_FIELD_STRENGTH).setDefaultValue(Instrument.instance().getDevices().getMagnet().getField());
+        getParam(CommonUP.DIGITAL_FILTER_SHIFT).setDefaultValue(Instrument.instance().getDevices().getCameleon().getAcquDeadPointCount());
+        getParam(CommonUP.DIGITAL_FILTER_REMOVED).setDefaultValue(Instrument.instance().getDevices().getCameleon().isRemoveAcquDeadPoint());
+
+        nucleus = Nucleus.getNucleusForName(getText(CommonUP.NUCLEUS_1));
         protonFrequency = Instrument.instance().getDevices().getMagnet().getProtonFrequency();
-        observeFrequency = nucleus.getFrequency(protonFrequency) + getDouble(OFFSET_FREQ_1);
-        getParam(BASE_FREQ_1).setValue(nucleus.getFrequency(protonFrequency));
+        observeFrequency = nucleus.getFrequency(protonFrequency) + getDouble(CommonUP.OFFSET_FREQ_1);
+        getParam(CommonUP.BASE_FREQ_1).setValue(nucleus.getFrequency(protonFrequency));
 
         min_time_per_acq_point = Hardware.getSequenceCompiler().getTransfertTimePerDataPt();
         gMax = GradientMath.getMaxGradientStrength();
 
-        set(Rx_gain, RECEIVER_GAIN);
-        getParam(RECEIVER_COUNT).setValue(Instrument.instance().getObservableRxs(nucleus).size());
+        set(CommonSP.Rx_gain, CommonUP.RECEIVER_GAIN);
+        getParam(CommonUP.RECEIVER_COUNT).setValue(Instrument.instance().getObservableRxs(nucleus).size());
 
-        set(Intermediate_frequency, Instrument.instance().getIfFrequency());
-        getParam(INTERMEDIATE_FREQUENCY).setValue(Instrument.instance().getIfFrequency());
+        set(CommonSP.Intermediate_frequency, Instrument.instance().getIfFrequency());
+        getParam(CommonUP.INTERMEDIATE_FREQUENCY).setValue(Instrument.instance().getIfFrequency());
 
-        set(Tx_frequency, observeFrequency);
-        getParam(OBSERVED_FREQUENCY).setValue(observeFrequency);
+        set(CommonSP.Tx_frequency, observeFrequency);
+        getParam(CommonUP.OBSERVED_FREQUENCY).setValue(observeFrequency);
 
-        set(Tx_nucleus, nucleus);
-        getParam(OBSERVED_NUCLEUS).setValue(nucleus);
+        set(CommonSP.Tx_nucleus, nucleus);
+        getParam(CommonUP.OBSERVED_NUCLEUS).setValue(nucleus);
     }
 
     @Override
@@ -137,6 +134,11 @@ public abstract class SeqPrep extends SeqPrepBasics {
         // Ini Acquisition Matrix
         // -----------------------------------------------
         iniAcqMat();
+
+        // -----------------------------------------------
+        // Ini ETL and VFL
+        // -----------------------------------------------
+        iniETLandVFL();
 
         // -----------------------------------------------
         // Ini TransformPlugin
@@ -188,12 +190,12 @@ public abstract class SeqPrep extends SeqPrepBasics {
         }
 
         // we find MaxPower for all pulses including pulses in both model and imaging parts
-        if (getBoolean(TX_AMP_ATT_AUTO)) {
+        if (getBoolean(CommonUP.TX_AMP_ATT_AUTO)) {
             RFPulse pulseMaxPower = rfPulsesTree.get(rfPulsesTree.lastKey());
-            pulseMaxPower.prepAtt(80, getListInt(TX_ROUTE));
+            pulseMaxPower.prepAtt(80, getListInt(CommonUP.TX_ROUTE));
 
             for (RFPulse eachPulse : rfPulses) {
-                eachPulse.prepTxAmp(getListInt(TX_ROUTE));
+                eachPulse.prepTxAmp(getListInt(CommonUP.TX_ROUTE));
             }
 
             getUPDisp();
@@ -287,40 +289,25 @@ public abstract class SeqPrep extends SeqPrepBasics {
             off_center_distance_3D = 0;
         }
 
-        getParam(OFF_CENTER_FIELD_OF_VIEW_X).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(1, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
-        getParam(OFF_CENTER_FIELD_OF_VIEW_Y).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(2, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
-        getParam(OFF_CENTER_FIELD_OF_VIEW_Z).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(3, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_X).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(1, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_Y).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(2, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_Z).setValue(roundToDecimal(getOff_center_distance_X_Y_Z(3, off_center_distance_1D, off_center_distance_2D, off_center_distance_3D), 5));
 
-        boolean is_read_phase_inverted = getBoolean(SWITCH_READ_PHASE);
+
+        boolean is_read_phase_inverted = getBoolean(CommonUP.SWITCH_READ_PHASE);
         if (is_read_phase_inverted) {
-            set(Gradient_axe_phase, GradientAxe.R);
-            set(Gradient_axe_read, GradientAxe.P);
+            set(CommonSP.Gradient_axe_phase, GradientAxe.R);
+            set(CommonSP.Gradient_axe_read, GradientAxe.P);
             double off_center_distance_tmp = off_center_distance_2D;
             off_center_distance_2D = off_center_distance_1D;
             off_center_distance_1D = off_center_distance_tmp;
         } else {
-            set(Gradient_axe_phase, GradientAxe.P);
-            set(Gradient_axe_read, GradientAxe.R);
+            set(CommonSP.Gradient_axe_phase, GradientAxe.P);
+            set(CommonSP.Gradient_axe_read, GradientAxe.R);
         }
-
-        //XG:for 3D PE
-        if (hasParam(SWITCH_READ_SLICE)) {
-            boolean is_read_slice_inverted = getBoolean(SWITCH_READ_SLICE);
-            if (is_read_slice_inverted) {
-                set(Gradient_axe_slice, GradientAxe.R);
-                set(Gradient_axe_read, GradientAxe.S);
-                double off_center_distance_tmp = off_center_distance_3D;
-                off_center_distance_3D = off_center_distance_1D;
-                off_center_distance_1D = off_center_distance_tmp;
-            } else {
-                set(Gradient_axe_slice, GradientAxe.S);
-                set(Gradient_axe_read, GradientAxe.R);
-            }
-        }
-
-        getParam(OFF_CENTER_FIELD_OF_VIEW_3D).setValue(off_center_distance_3D);
-        getParam(OFF_CENTER_FIELD_OF_VIEW_2D).setValue(off_center_distance_2D);
-        getParam(OFF_CENTER_FIELD_OF_VIEW_1D).setValue(off_center_distance_1D);
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D).setValue(off_center_distance_3D);
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D).setValue(off_center_distance_2D);
+        getParam(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D).setValue(off_center_distance_1D);
 
         // -----------------------------------------------
         // activate gradient rotation matrix
@@ -385,43 +372,43 @@ public abstract class SeqPrep extends SeqPrepBasics {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     protected void getAcq1D() throws Exception {
         // FOV
-        double fov_eff = isFovDoubled ? (getDouble(FIELD_OF_VIEW) * 2) : getDouble(FIELD_OF_VIEW);
+        double fov_eff = isFovDoubled ? (getDouble(CommonUP.FIELD_OF_VIEW) * 2) : getDouble(CommonUP.FIELD_OF_VIEW);
 
         // Pixel dimension calculation
-        acqMatrixDimension1D = getInt(USER_MATRIX_DIMENSION_1D) * (isFovDoubled ? 2 : 1);
-        getParam(RESOLUTION_FREQUENCY).setValue(fov_eff / acqMatrixDimension1D); // frequency true resolution for display
+        acqMatrixDimension1D = getInt(CommonUP.USER_MATRIX_DIMENSION_1D) * (isFovDoubled ? 2 : 1);
+        getParam(CommonUP.RESOLUTION_FREQUENCY).setValue(fov_eff / acqMatrixDimension1D); // frequency true resolution for display
 
         // MATRIX
-        double spectralWidthPerPixel = getDouble(SPECTRAL_WIDTH_PER_PIXEL);
+        double spectralWidthPerPixel = getDouble(CommonUP.SPECTRAL_WIDTH_PER_PIXEL);
         spectralWidth = isFovDoubled ? (spectralWidth * 2) : spectralWidth;
-        spectralWidth = getBoolean(SPECTRAL_WIDTH_OPT) ? spectralWidth : spectralWidthPerPixel * acqMatrixDimension1D;
+        spectralWidth = getBoolean(CommonUP.SPECTRAL_WIDTH_OPT) ? spectralWidth : spectralWidthPerPixel * acqMatrixDimension1D;
 
 //        spectralWidth = Hardware.getNearestSpectralWidth(spectralWidth);      // get real spectral width from Chameleon
         spectralWidth = Hardware.getSequenceCompiler().getNearestSW(spectralWidth);      //  to be replaced by above when correctly implemented for Cam4 05/07/2019
         double spectralWidthUP = isFovDoubled ? (spectralWidth / 2) : spectralWidth;
         spectralWidthPerPixel = spectralWidth / acqMatrixDimension1D;
-        getParam(SPECTRAL_WIDTH_PER_PIXEL).setValue(spectralWidthPerPixel);
-        getParam(SPECTRAL_WIDTH).setValue(spectralWidthUP);
+        getParam(CommonUP.SPECTRAL_WIDTH_PER_PIXEL).setValue(spectralWidthPerPixel);
+        getParam(CommonUP.SPECTRAL_WIDTH).setValue(spectralWidthUP);
         observation_time = acqMatrixDimension1D / spectralWidth;
-        getParam(ACQUISITION_TIME_PER_SCAN).setValue(observation_time);   // display observation time
-        getParam(ACQUISITION_MATRIX_DIMENSION_1D).setValue(acqMatrixDimension1D);
+        getParam(CommonUP.ACQUISITION_TIME_PER_SCAN).setValue(observation_time);   // display observation time
+        getParam(CommonUP.ACQUISITION_MATRIX_DIMENSION_1D).setValue(acqMatrixDimension1D);
     }
 
     protected void getAcq2D() {
         // FOV
         clcFovPhase();
-        setSquarePixel(getBoolean(SQUARE_PIXEL), 2);
+        setSquarePixel(getBoolean(CommonUP.SQUARE_PIXEL), 2);
 
         // MATRIX 2D
-        if ("Elliptical3D".equalsIgnoreCase((String) (getParam(TRANSFORM_PLUGIN).getValue()))) {
-            if (getDouble(USER_PARTIAL_PHASE) <= 55)
-                getParam(USER_PARTIAL_PHASE).setValue(55.0); // for elliptical3D, minimum of 2D partialFourier set 55%
+        if ("Elliptical3D".equalsIgnoreCase((String) (getParam(CommonUP.TRANSFORM_PLUGIN).getValue()))) {
+            if (getDouble(CommonUP.USER_PARTIAL_PHASE) <= 55)
+                getParam(CommonUP.USER_PARTIAL_PHASE).setValue(55.0); // for elliptical3D, minimum of 2D partialFourier set 55%
         }
-        double partial_phase = getDouble(USER_PARTIAL_PHASE);
+        double partial_phase = getDouble(CommonUP.USER_PARTIAL_PHASE);
         acqMatrixDimension2D = floorEven(partial_phase / 100f * userMatrixDimension2D);
         acqMatrixDimension2D = (acqMatrixDimension2D < 4) && isEnablePhase ? 4 : acqMatrixDimension2D;
-        getParam(USER_ZERO_FILLING_2D).setValue((100 - partial_phase));
-        getParam(ACQUISITION_MATRIX_DIMENSION_2D).setValue(acqMatrixDimension2D);
+        getParam(CommonUP.USER_ZERO_FILLING_2D).setValue((100 - partial_phase));
+        getParam(CommonUP.ACQUISITION_MATRIX_DIMENSION_2D).setValue(acqMatrixDimension2D);
     }
 
     protected void getAcq3D() {
@@ -435,21 +422,21 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
     protected void getImgRes() {
         // PIXEL dimension calculation
-        double pixelDimensionPhase = fovPhase / getInt(ACQUISITION_MATRIX_DIMENSION_2D);
-        getParam(RESOLUTION_PHASE).setValue(pixelDimensionPhase); // phase true resolution for display
+        double pixelDimensionPhase = fovPhase / getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_2D);
+        getParam(CommonUP.RESOLUTION_PHASE).setValue(pixelDimensionPhase); // phase true resolution for display
 
         double pixel_dimension_3D;
         if (isMultiplanar) {
-            pixel_dimension_3D = getDouble(SLICE_THICKNESS);
+            pixel_dimension_3D = getDouble(CommonUP.SLICE_THICKNESS);
         } else {
-            pixel_dimension_3D = getDouble(SLICE_THICKNESS) * getInt(USER_MATRIX_DIMENSION_3D) / getInt(ACQUISITION_MATRIX_DIMENSION_3D); //true resolution
+            pixel_dimension_3D = getDouble(CommonUP.SLICE_THICKNESS) * getInt(CommonUP.USER_MATRIX_DIMENSION_3D) / getInt(CommonUP.ACQUISITION_MATRIX_DIMENSION_3D); //true resolution
         }
-        getParam(RESOLUTION_SLICE).setValue(pixel_dimension_3D); // phase true resolution for display
+        getParam(CommonUP.RESOLUTION_SLICE).setValue(pixel_dimension_3D); // phase true resolution for display
     }
 
     protected void getADC() {
-        set(Time_rx, getDouble(ACQUISITION_TIME_PER_SCAN));
-        set(LO_att, Instrument.instance().getLoAttenuation());
+        set(CommonSP.Time_rx, getDouble(CommonUP.ACQUISITION_TIME_PER_SCAN));
+        set(CommonSP.LO_att, Instrument.instance().getLoAttenuation());
     }
 
     protected void getROGrad() throws Exception {
