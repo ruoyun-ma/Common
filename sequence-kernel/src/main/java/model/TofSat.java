@@ -78,6 +78,17 @@ public class TofSat extends SatBand {
     }
 
     @Override
+    public void prepFinal() {
+        if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
+            String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
+            if (isTofBandEnabled)
+                seqDescription += "_TOFSAT";
+
+            parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);
+        }
+    }
+
+    @Override
     public String getName() {
         return "TofSat";
     }
@@ -95,7 +106,7 @@ public class TofSat extends SatBand {
             double sat_flow_velocity = parent.getDouble(UP.TOF2D_FLOW_VELOCITY);
             double sat_flow_time = sat_flow_dist / sat_flow_velocity;
             double time = 0.0;
-            if (parent.hasParam(UP.TOF2D_FLOW_TAU) && parent.roundToDecimal(parent.getDouble(UP.TOF2D_FLOW_TAU),6) >= parent.minInstructionDelay) {
+            if (parent.hasParam(UP.TOF2D_FLOW_TAU) && parent.roundToDecimal(parent.getDouble(UP.TOF2D_FLOW_TAU), 6) >= parent.minInstructionDelay) {
                 time = parent.getDouble(UP.TOF2D_FLOW_TAU);
                 sat_flow_time_corr = parent.getDouble(UP.TOF2D_FLOW_TAU);
             } else {
@@ -104,7 +115,7 @@ public class TofSat extends SatBand {
                 time += parent.getDouble(GRADIENT_RISE_TIME)
                         + (parent.hasParam(TX_LENGTH_90) ? parent.getDouble(TX_LENGTH_90) : parent.getDouble(TX_LENGTH)) / 2
                         + parent.getDouble(ECHO_TIME)
-                        + parent.getSequenceTable(Time_rx).get(0).doubleValue()/2;
+                        + parent.getSequenceTable(Time_rx).get(0).doubleValue() / 2;
 
                 if (parent.models.containsKey("SatBand")) {
                     time += parent.getSequenceTable(SatBand.SP.Time_delay_sb).get(0).doubleValue();

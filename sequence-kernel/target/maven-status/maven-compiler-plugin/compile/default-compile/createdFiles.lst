@@ -2,11 +2,14 @@ model\FlyBack$SP.class
 model\ModelInterface.class
 model\FlyBack$UP.class
 model\FlowComp.class
+kernel\KernelGE.class
 model\FatSatWep$SP.class
 model\EPG.class
 model\FlyBack.class
 model\FatSatWep$UP.class
 model\ExtTrig$UP.class
+kernel\KernelGE$SP.class
+kernel\KernelGE$UP.class
 model\SatBand$SP.class
 model\SatBand$UP.class
 model\ExtTrig$SP.class

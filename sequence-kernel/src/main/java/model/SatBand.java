@@ -154,7 +154,7 @@ public class SatBand implements ModelInterface {
 
         if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
             String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
-            if (isSBorTBEnabled)
+            if (isSatBandEnabled)
                 seqDescription += "_SATBAND";
 
             parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);

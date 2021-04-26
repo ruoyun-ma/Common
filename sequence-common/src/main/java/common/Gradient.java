@@ -428,6 +428,28 @@ public class Gradient {
         }
     }
 
+    //    refocalize the gradient of certain step with ratio of the top
+    public void refocalizeGradient(Gradient gradToRef, int step, double ratio) {
+        bStaticGradient = true;
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
+        if (Double.isNaN(equivalentTime)) {
+            prepareEquivalentTime();
+        }
+
+        double amp;
+        amplitudeArray = null;
+        if (gradToRef.getSteps() > 1) {
+            amp = gradToRef.getAmplitudeArray(step);
+            double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
+
+            staticArea = -gradArea;
+            steps = 1;
+            calculateStaticAmplitude();
+        } else {
+            refocalizeGradient(gradToRef, ratio);
+        }
+    }
+
     public void refocalizeGradientWithFlowComp(Gradient grad, double ratioTime, Gradient gradflowcomp) {
         gradFlowComp = gradflowcomp;
         // from Gs to middle of G_refocus
