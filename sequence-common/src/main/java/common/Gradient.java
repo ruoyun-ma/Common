@@ -200,6 +200,9 @@ public class Gradient {
         return spoilerExcess;
     }
 
+    public double getGradientShapeRiseTime(){
+        return grad_shape_rise_time;
+    }
     public double getMinTopTime() {
         return minTopTime;
     }
@@ -401,6 +404,31 @@ public class Gradient {
 
     public void refocalizeGradient() {
         calculateStaticAmplitude();
+    }
+
+    //    refocalize the gradient with ratio of the top
+    public void refocalizeGradient_singleValue(Gradient gradToRef, double ratio) {
+        bStaticGradient = true;
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
+        if (Double.isNaN(equivalentTime)) {
+            prepareEquivalentTime();
+        }
+
+        double amp;
+        if (gradToRef.getSteps() > 1) {
+            amp = gradToRef.getAmplitudeArray(0);
+            amplitudeArray = new double[1];
+            for (int i = 0; i < 1; i++) {
+                amplitudeArray[i] = -(ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
+//                    amplitudeArray[i] = -gradToRef.getAmplitudeArray(i);
+            }
+            steps = 1;
+        } else {
+            amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
+            staticArea = -gradArea;
+            calculateStaticAmplitude();
+        }
     }
 
     //    refocalize the gradient with ratio of the top
@@ -860,6 +888,22 @@ public class Gradient {
         }
         amplitudeArray = newTable;
         steps = new_steps;
+    }
+
+    // for internal dummy scans, add nbDummy scan before the scans
+    public void reoderPhaseEncodingForSEEPIplusDummy(int nbDummy) {
+        int new_steps = steps + nbDummy;
+        double[] newTable = new double[new_steps];
+        newTable[0] = 0;
+        for (int i = 0; i < nbDummy; i++) {
+            newTable[i] = 0;
+        }
+        for (int i = 0; i < steps; i++) {
+            newTable[i + nbDummy] = -amplitudeArray[i];
+        }
+        amplitudeArray = newTable;
+        steps = new_steps;
+
     }
 
     public void reoderPhaseEncodingForSEEPIplus2() {

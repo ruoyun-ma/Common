@@ -16,6 +16,7 @@ import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequence.table.generator.TableGeneratorInterface;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
+import rs2d.spinlab.tools.param.NumberEnum;
 import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.table.Order;
@@ -66,8 +67,9 @@ public class RFPulse {
     private Nucleus nucleus;
     private double powerPulse = Double.NaN;
 
+    //XG
     private double sincGenRampSlope = 0.2;
-
+    private Table attOffsetTable = new Table(0, NumberEnum.TxAtt);
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -104,6 +106,22 @@ public class RFPulse {
         FrequencyOffsetTable = offsetFreqTab;
     }
 
+    //XG
+    public RFPulse(Param attPar, Table attOffsetPar, Table amplitudeTab, Table phaseTab,
+                   Table timeTab, Shape shape, Shape shapePhase, Table offsetFreqTab) {
+        //new RFPulse(attPar, amplitudeTab, phaseTab, timeTab, shape, shapePhase, offsetFreqTab);
+        amplitudeTable = amplitudeTab;
+        attParam = attPar;
+        phase = phaseTab;
+
+        timeTable = timeTab;
+        this.shape = shape;
+        this.shapePhase = shapePhase;
+
+        pulseDuration = timeTable.get(0).doubleValue();
+        FrequencyOffsetTable = offsetFreqTab;
+        attOffsetTable = attOffsetPar;
+    }
 
     public static RFPulse createRFPulse(Sequence sequence, GeneratorSequenceParamEnum txAttParam, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum txPhaseTab,
                                         GeneratorSequenceParamEnum timeTab, GeneratorSequenceParamEnum shape, GeneratorSequenceParamEnum shapePhaseShape, GeneratorSequenceParamEnum offsetTab) {
@@ -119,6 +137,12 @@ public class RFPulse {
         return new RFPulse(sequence.getPublicTable(timeTab.name()), sequence.getTable(offsetTab.name()), sequence.getTable(txPhaseTab.name()));
     }
 
+    //XG
+    public static RFPulse createRFPulse(Sequence sequence, GeneratorSequenceParamEnum txAttParam, GeneratorSequenceParamEnum txAttOffsetParam, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum txPhaseTab,
+                                        GeneratorSequenceParamEnum timeTab, GeneratorSequenceParamEnum shape, GeneratorSequenceParamEnum shapePhaseShape, GeneratorSequenceParamEnum offsetTab) {
+        return new RFPulse(sequence.getPublicParam(txAttParam.name()), sequence.getPublicTable(txAttOffsetParam.name()), sequence.getTable(amplitudeTab.name()), sequence.getTable(txPhaseTab.name()),
+                sequence.getPublicTable(timeTab.name()), (Shape) sequence.getTable(shape.name()), (Shape) sequence.getTable(shapePhaseShape.name()), sequence.getTable(offsetTab.name()));
+    }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  general  methods: get set
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -172,6 +196,28 @@ public class RFPulse {
         txAtt = att.getValue().intValue();
         attParam.setValue(txAtt);
 
+    }
+
+    public NumberParam getAttParam() {
+        return (NumberParam) attParam;
+    }
+
+    public void setAttOffset(int att) {
+        setSequenceTableSingleValue(attOffsetTable, att);
+    }
+
+    public void setAttOffset(Table attTable) {
+        setSequenceTableSingleValue(attOffsetTable, attTable.get(0).intValue());
+    }
+
+    public void createAttOffset(Sequence sequence, GeneratorSequenceParamEnum txAttOffsetParam) {
+        attOffsetTable = sequence.getPublicTable(txAttOffsetParam.name());
+    }
+
+    public int getAttOffset() {
+        if (attOffsetTable.size() != 1)
+            Log.error(getClass(),"RFPulse:: the size of attOffsetTable is wrong");
+        return attOffsetTable.get(0).intValue();
     }
 
     public void setAmp(double amp) {
@@ -274,6 +320,8 @@ public class RFPulse {
         //    txAtt = (int) attParam.getValue();
         //}
         txAtt = ((NumberParam) attParam).getValue().intValue();
+        //XG: adding txAttOffset, 2021/5/4
+        txAtt += attOffsetTable.get(0).intValue();
 
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
@@ -298,6 +346,8 @@ public class RFPulse {
         //    txAtt = (int) attParam.getValue();
         //}
         txAtt = ((NumberParam) attParam).getValue().intValue();
+        //XG: adding txAttOffset, 2021/5/4
+        txAtt += attOffsetTable.get(0).intValue();
 
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
@@ -400,9 +450,13 @@ public class RFPulse {
      * @return tx_amp
      */
     public double prepTxAmp(List<Integer> txRoute) {
-        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
-        txAtt = ((NumberParam) attParam).getValue().intValue();
-        //}
+//        //XG: redundancy removed, 2021/5/4
+//        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
+//        txAtt = ((NumberParam) attParam).getValue().intValue();
+//        //}
+//        //XG: adding txAttOffset, 2021/5/4
+//        txAtt += attOffsetTable.get(0).intValue();
+
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
@@ -418,9 +472,13 @@ public class RFPulse {
      * @return tx_amp
      */
     public double prepTxAmpMultiFA(List<Integer> txRoute, double[] FA_list, Order order) {
-        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
-        txAtt = ((NumberParam) attParam).getValue().intValue();
-        //}
+//        //XG: redundancy removed, 2021/5/4
+//        //if (txAtt == -1) { //XG: we invoke attParam every time, 2021/3/24
+//        txAtt = ((NumberParam) attParam).getValue().intValue();
+//        //}
+//        //XG: adding txAttOffset, 2021/5/4
+//        txAtt += attOffsetTable.get(0).intValue();
+
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(txRoute.get(0));
         tx_amp90 = calculateTxAmp90(txCh);
         tx_amp180 = calculateTxAmp180(txCh);
