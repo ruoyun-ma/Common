@@ -7,12 +7,12 @@ import rs2d.spinlab.tools.param.Param;
 
 import common.*;
 import kernel.*;
+
 import static common.CommonUP.*;
 import static common.CommonSP.*;
 
 /**
- *  V1.0 - 2021.3 XG
- *
+ * V1.0 - 2021.3 XG
  */
 
 public class FatSat implements ModelInterface {
@@ -50,6 +50,7 @@ public class FatSat implements ModelInterface {
 
     protected enum SP implements GeneratorSequenceParamEnum {
         Enable_fs,
+        Tx_att_offset_fs,
         Tx_amp_fs,
         Tx_phase_fs,
         Tx_shape_fs,
@@ -167,6 +168,9 @@ public class FatSat implements ModelInterface {
     protected void initPulseandGrad() throws Exception {
         pulseTXFatSat = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_fs, SP.Tx_phase_fs,
                 SP.Time_tx_fs, SP.Tx_shape_fs, SP.Tx_shape_phase_fs, SP.Freq_offset_tx_fs);
+        if (parent.getSequence().getPublicTable(SP.Tx_att_offset_fs.name()) != null) {
+            pulseTXFatSat.createAttOffset(parent.getSequence(), SP.Tx_att_offset_fs);
+        }
         pulseTXFatSat.setShape(parent.getText(UP.FATSAT_TX_SHAPE), parent.nb_shape_points, "Hamming");
 
         gradFatsatRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fs_read, SP.Time_grad_fs,
@@ -272,7 +276,7 @@ public class FatSat implements ModelInterface {
                 parent.set(FatSatWep.SP.Time_tx_fs_wep, tx_length_90_fs);
                 parent.getParam(FatSatWep.UP.FATSAT_WEP_TX_LENGTH).setValue(tx_length_90_fs);
             }
-            System.out.println(pulseTXFatSat.getPower()+ " pulseTXFatSat.getPower()   ERROR");
+            System.out.println(pulseTXFatSat.getPower() + " pulseTXFatSat.getPower()   ERROR");
         }
     }
 

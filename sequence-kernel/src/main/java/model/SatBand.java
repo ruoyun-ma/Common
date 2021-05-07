@@ -16,6 +16,9 @@ import static java.util.Arrays.asList;
 import common.*;
 import kernel.*;
 
+import static common.CommonUP.*;
+import static common.CommonSP.*;
+
 /**
  * V1.0 - 2021.3 XG
  */
@@ -73,6 +76,7 @@ public class SatBand implements ModelInterface {
         Tx_phase_sb,
         Tx_shape_sb,
         Tx_shape_phase_sb,
+        Tx_att_offset_sb,
         Freq_offset_tx_sb,
         Freq_offset_tx_sb_prep,
         Freq_offset_tx_sb_comp,
@@ -106,7 +110,7 @@ public class SatBand implements ModelInterface {
                 "ALL");
         parent.setSuggestedValFromListString(satbandOrientationAllowed, true, UP.SATBAND_ORIENTATION);
 
-        isAttAuto = parent.getBoolean(CommonUP.TX_AMP_ATT_AUTO);
+        isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
         isSatBandEnabled = parent.getBoolean(UP.SATBAND_ENABLED);
         position_sli_ph_rea = satBandPrep();
     }
@@ -128,7 +132,7 @@ public class SatBand implements ModelInterface {
         }
         if (parent.hasParam(TofSat.UP.TOF2D_ENABLED)) {
             parent.getParam(TofSat.UP.TOF2D_ENABLED).setValue(isTofBandEnabled);
-            if (isTofBandEnabled && !parent.getBoolean(CommonUP.MULTI_PLANAR_EXCITATION)) {
+            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
                 parent.getParam(TofSat.UP.TOF2D_SB_TX_SHAPE).setValue("GAUSSIAN");
             }
         }
@@ -152,12 +156,12 @@ public class SatBand implements ModelInterface {
         } else
             pulseTXSatBand.setAmp(parent.getDouble(UP.SATBAND_TX_AMP));
 
-        if (parent.hasParam(CommonUP.SEQ_DESCRIPTION)) {
-            String seqDescription = parent.getText(CommonUP.SEQ_DESCRIPTION);
+        if (parent.hasParam(SEQ_DESCRIPTION)) {
+            String seqDescription = parent.getText(SEQ_DESCRIPTION);
             if (isSatBandEnabled)
                 seqDescription += "_SATBAND";
 
-            parent.getParam(CommonUP.SEQ_DESCRIPTION).setValue(seqDescription);
+            parent.getParam(SEQ_DESCRIPTION).setValue(seqDescription);
         }
     }
 
@@ -190,7 +194,10 @@ public class SatBand implements ModelInterface {
     }
 
     protected void initPulseandGrad() throws Exception {
-        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), CommonSP.Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb);
+        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb);
+        if (parent.getSequence().getPublicTable(SP.Tx_att_offset_sb.name()) != null) {
+            pulseTXSatBand.createAttOffset(parent.getSequence(), SP.Tx_att_offset_sb);
+        }
         pulseTXSatBand.setShape(parent.getText(UP.SATBAND_TX_SHAPE), parent.nb_shape_points, "90 degree");
 
         if (isTofBandEnabled) { //TODO: better merge TOF2D_SB_TX_SHAPE with SATBAND_TX_SHAPE one day
@@ -248,10 +255,10 @@ public class SatBand implements ModelInterface {
 
     protected void prepGradTable() {
         double tx_length_sb = parent.minInstructionDelay;
-        if (parent.hasParam(CommonUP.TX_LENGTH_90)) {
-            tx_length_sb = isSBorTBEnabled ? parent.getDouble(CommonUP.TX_LENGTH_90) : parent.minInstructionDelay;
-        } else if (parent.hasParam(CommonUP.TX_LENGTH)) {
-            tx_length_sb = isSBorTBEnabled ? parent.getDouble(CommonUP.TX_LENGTH) : parent.minInstructionDelay;
+        if (parent.hasParam(TX_LENGTH_90)) {
+            tx_length_sb = isSBorTBEnabled ? parent.getDouble(TX_LENGTH_90) : parent.minInstructionDelay;
+        } else if (parent.hasParam(TX_LENGTH)) {
+            tx_length_sb = isSBorTBEnabled ? parent.getDouble(TX_LENGTH) : parent.minInstructionDelay;
         } else {
             Log.error(getClass(), "User Param TX_LENGTH_90 and TX_LENGTH do not exist");
         }
@@ -260,11 +267,11 @@ public class SatBand implements ModelInterface {
         double grad_amp_sat_spoiler = parent.minInstructionDelay;
         double satband_thickness = parent.minInstructionDelay;
         if (isSatBandEnabled) {
-            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(UP.SATBAND_TX_SHAPE, CommonUP.TX_BANDWIDTH_FACTOR, CommonUP.TX_BANDWIDTH_FACTOR_3D);
+            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(UP.SATBAND_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
             grad_amp_sat_spoiler = parent.getDouble(UP.SATBAND_GRAD_AMP_SPOILER);
             satband_thickness = parent.getDouble(UP.SATBAND_THICKNESS);
         } else if (isTofBandEnabled) {
-            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF2D_SB_TX_SHAPE, CommonUP.TX_BANDWIDTH_FACTOR, CommonUP.TX_BANDWIDTH_FACTOR_3D);
+            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF2D_SB_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
             grad_amp_sat_spoiler = parent.getDouble(TofSat.UP.TOF2D_SB_GRAMP_SP);
             satband_thickness = parent.getDouble(TofSat.UP.TOF2D_SB_THICKNESS);
         }
@@ -274,7 +281,7 @@ public class SatBand implements ModelInterface {
         double grad_amp_satband_mTpm = 0;
 
         if (isSBorTBEnabled) {
-            Gradient gradSB = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read, SP.Time_tx_sb, CommonSP.Grad_shape_rise_up, CommonSP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
+            Gradient gradSB = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_read, SP.Time_tx_sb, Grad_shape_rise_up, Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
             if (!gradSB.prepareSliceSelection(tx_bandwidth_sb, satband_thickness)) {
                 double satband_thickness_mod = gradSB.getSliceThickness();
                 parent.notifyOutOfRangeParam(UP.SATBAND_THICKNESS, satband_thickness_mod, ((NumberParam) parent.getParam(UP.SATBAND_THICKNESS)).getMaxValue(), "Pulse length too short to reach this satband slice thickness");
@@ -297,7 +304,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = 0;
                 gradAmpSBPhaseSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBReadSpoilerTable[n] = grad_amp_sat_spoiler;
-                double off_center_pos = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D) + parent.getDouble(CommonUP.FIELD_OF_VIEW_3D) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_pos = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_3D) + parent.getDouble(FIELD_OF_VIEW_3D) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_pos);
                 n += 1;
             }
@@ -308,7 +315,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = 0;
                 gradAmpSBPhaseSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBReadSpoilerTable[n] = grad_amp_sat_spoiler;
-                double off_center_neg = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_3D) - parent.getDouble(CommonUP.FIELD_OF_VIEW_3D) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_neg = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_3D) - parent.getDouble(FIELD_OF_VIEW_3D) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_neg);
                 n += 1;
             }
@@ -319,7 +326,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBPhaseSpoilerTable[n] = 0;
                 gradAmpSBReadSpoilerTable[n] = grad_amp_sat_spoiler;
-                double off_center_pos = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D) + parent.getDouble(CommonUP.FIELD_OF_VIEW_PHASE) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_pos = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_2D) + parent.getDouble(FIELD_OF_VIEW_PHASE) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_pos);
                 n += 1;
             }
@@ -330,7 +337,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBPhaseSpoilerTable[n] = 0;
                 gradAmpSBReadSpoilerTable[n] = grad_amp_sat_spoiler;
-                double off_center_neg = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_2D) - parent.getDouble(CommonUP.FIELD_OF_VIEW_PHASE) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_neg = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_2D) - parent.getDouble(FIELD_OF_VIEW_PHASE) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_neg);
                 n += 1;
             }
@@ -341,7 +348,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBPhaseSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBReadSpoilerTable[n] = 0;
-                double off_center_pos = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D) + parent.getDouble(CommonUP.FIELD_OF_VIEW) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_pos = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_1D) + parent.getDouble(FIELD_OF_VIEW) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_pos);
                 n += 1;
             }
@@ -352,7 +359,7 @@ public class SatBand implements ModelInterface {
                 gradAmpSBSliceSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBPhaseSpoilerTable[n] = grad_amp_sat_spoiler;
                 gradAmpSBReadSpoilerTable[n] = 0;
-                double off_center_neg = parent.getDouble(CommonUP.OFF_CENTER_FIELD_OF_VIEW_1D) - parent.getDouble(CommonUP.FIELD_OF_VIEW) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
+                double off_center_neg = parent.getDouble(OFF_CENTER_FIELD_OF_VIEW_1D) - parent.getDouble(FIELD_OF_VIEW) / 2.0 + satband_distance_from_fov + satband_thickness / 2.0;
                 offsetFreqSBTable[n] = new RFPulse().calculateOffsetFreq(grad_amp_satband_mTpm, off_center_neg);
                 n += 1;
             }
@@ -409,21 +416,21 @@ public class SatBand implements ModelInterface {
             parent.set(SP.Time_delay_sb, parent.minInstructionDelay);
 
         if (isSBorTBEnabled) {
-            parent.set(SP.Time_grad_ramp_sb, parent.getDouble(CommonUP.GRADIENT_RISE_TIME));
+            parent.set(SP.Time_grad_ramp_sb, parent.getDouble(GRADIENT_RISE_TIME));
             parent.set(SP.Time_grad_sb, 0.0005);
-            if (parent.hasParam(CommonUP.TX_LENGTH_90)) {
-                parent.set(SP.Time_tx_sb, parent.getDouble(CommonUP.TX_LENGTH_90));
-            } else if (parent.hasParam(CommonUP.TX_LENGTH)) {
-                parent.set(SP.Time_tx_sb, parent.getDouble(CommonUP.TX_LENGTH));
+            if (parent.hasParam(TX_LENGTH_90)) {
+                parent.set(SP.Time_tx_sb, parent.getDouble(TX_LENGTH_90));
+            } else if (parent.hasParam(TX_LENGTH)) {
+                parent.set(SP.Time_tx_sb, parent.getDouble(TX_LENGTH));
             } else {
                 Log.error(getClass(), "User Param TX_LENGTH_90 or TX_LENGTH does not exist");
             }
-            if (isTofBandEnabled && !parent.getBoolean(CommonUP.MULTI_PLANAR_EXCITATION)) {
+            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE) && parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) > 0.01F) {
-                    if (parent.hasParam(TofSat.UP.TOF3D_MT_TX_LENGTH) && parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH) > parent.minInstructionDelay){
+                    if (parent.hasParam(TofSat.UP.TOF3D_MT_TX_LENGTH) && parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH) > parent.minInstructionDelay) {
                         parent.set(SP.Time_tx_sb, parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH));
                     } else {
-                        double factor = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) / parent.getDouble(CommonUP.FLIP_ANGLE);
+                        double factor = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) / parent.getDouble(FLIP_ANGLE);
                         parent.set(SP.Time_tx_sb, factor * parent.getSequenceTable(SP.Time_tx_sb).get(0).doubleValue());
                     }
                 } else {
@@ -448,8 +455,8 @@ public class SatBand implements ModelInterface {
     }
 
     protected double getFlipAngle() {
-        double flip_angle = pulseTXSatBand.isSlr() ? 90 : parent.getDouble(CommonUP.FLIP_ANGLE);
-        parent.getParam(CommonUP.FLIP_ANGLE).setValue(flip_angle);
+        double flip_angle = pulseTXSatBand.isSlr() ? 90 : parent.getDouble(FLIP_ANGLE);
+        parent.getParam(FLIP_ANGLE).setValue(flip_angle);
 
         double flip_angle_satband = 0;
         double time_tau_sat = 0.0;
@@ -473,21 +480,21 @@ public class SatBand implements ModelInterface {
                     time_tau_sat += parent.getSequenceTable(TofSat.SP.Time_flow).getMaxValue();
                 }
 
-                if (parent.hasParam(CommonUP.TX_LENGTH_90)) {
-                    time_tau_sat += parent.getDouble(CommonUP.TX_LENGTH_90);
-                } else if (parent.hasParam(CommonUP.TX_LENGTH)) {
-                    time_tau_sat += parent.getDouble(CommonUP.TX_LENGTH);
+                if (parent.hasParam(TX_LENGTH_90)) {
+                    time_tau_sat += parent.getDouble(TX_LENGTH_90);
+                } else if (parent.hasParam(TX_LENGTH)) {
+                    time_tau_sat += parent.getDouble(TX_LENGTH);
                 }
             }
 
             double time_t1_satband = parent.getDouble(UP.SATBAND_T1);
             double t1_relax_time_sat = time_t1_satband / 1000.0;   // T1_tissue = 500ms
             //
-            double flip_90_sat = flip_angle == 90 ? Math.acos((1 - Math.exp(time_tau_sat / t1_relax_time_sat)) / (1 - Math.exp((time_tau_sat - parent.getDouble(CommonUP.REPETITION_TIME)) / t1_relax_time_sat))) : Math.acos(1 - Math.exp(time_tau_sat / t1_relax_time_sat));
+            double flip_90_sat = flip_angle == 90 ? Math.acos((1 - Math.exp(time_tau_sat / t1_relax_time_sat)) / (1 - Math.exp((time_tau_sat - parent.getDouble(REPETITION_TIME)) / t1_relax_time_sat))) : Math.acos(1 - Math.exp(time_tau_sat / t1_relax_time_sat));
             double flip_90_sat_degree = Math.toDegrees((isTofBandEnabled ? 1.5 : 1) * flip_90_sat);
             flip_angle_satband = pulseTXSatBand.isSlr() ? 90 : flip_90_sat_degree;  //ha slr,akkor legyen 90,különben szar a szeletprofil!
 
-            if (isTofBandEnabled && !parent.getBoolean(CommonUP.MULTI_PLANAR_EXCITATION)) {
+            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE)) {
                     flip_angle_satband = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE);
                 }
@@ -498,7 +505,7 @@ public class SatBand implements ModelInterface {
 
     protected int[] satBandPrep() {
         String satbandOrientation = parent.getText(UP.SATBAND_ORIENTATION);
-        String orientation = parent.getText(CommonUP.ORIENTATION);
+        String orientation = parent.getText(ORIENTATION);
 
         boolean cranial = false;
         boolean caudal = false;
@@ -564,7 +571,7 @@ public class SatBand implements ModelInterface {
             position_sli_ph_rea[4] = cranial ? 1 : 0;
             position_sli_ph_rea[5] = caudal ? 1 : 0;
         } else if ("OBLIQUE".equalsIgnoreCase(orientation)) {
-            List<Double> image_orientation = parent.getListDouble(CommonUP.IMAGE_ORIENTATION_SUBJECT);
+            List<Double> image_orientation = parent.getListDouble(IMAGE_ORIENTATION_SUBJECT);
             double[][] dir_ind = new double[3][3];
             for (int i = 0; i < 3; i++) {
                 dir_ind[0][i] = image_orientation.get(i);
@@ -665,7 +672,7 @@ public class SatBand implements ModelInterface {
             // System.out.println("read+ "+position_sli_ph_rea[4]+" phase+ "+position_sli_ph_rea[2]+" slice+ "+position_sli_ph_rea[0]);
             // System.out.println("read- "+position_sli_ph_rea[5]+" phase- "+position_sli_ph_rea[3]+" slice- "+position_sli_ph_rea[1]);
         }
-        boolean is_switch = parent.getBoolean(CommonUP.SWITCH_READ_PHASE);
+        boolean is_switch = parent.getBoolean(SWITCH_READ_PHASE);
         boolean phase_pos_temp = position_sli_ph_rea[2] == 1;
         boolean phase_neg_temp = position_sli_ph_rea[3] == 1;
         boolean read_pos_temp = position_sli_ph_rea[4] == 1;

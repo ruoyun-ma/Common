@@ -4,6 +4,7 @@ import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 
 public enum CommonSP implements GeneratorSequenceParamEnum{
     Tx_att,
+    Tx_att_offset,
     Rx_gain,
     Rx_freq_offset,
     Rx_phase,

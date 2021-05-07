@@ -38,9 +38,10 @@ import static common.CommonSP.*;
  */
 
 public abstract class SeqPrepBasics extends BaseSequenceGenerator {
-    public TreeMap<Double, RFPulse> rfPulsesTree = new TreeMap<>();
-    public List<RFPulse> rfPulses = new ArrayList<>();
     public TreeMap<String, ModelInterface> models = new TreeMap<>();
+    public TreeMap<Double, RFPulse> rfPulsesTree = new TreeMap<>();
+    public List<Integer> rfPulsesAtt = new ArrayList<>();
+    public List<RFPulse> rfPulses = new ArrayList<>();
     public List<String> modelNames;
     public RFPulse pulseTX;
     public RFPulse pulseTX90; //TODO:XG: we better unify them in future

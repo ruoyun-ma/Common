@@ -69,7 +69,8 @@ public class RFPulse {
 
     //XG
     private double sincGenRampSlope = 0.2;
-    private Table attOffsetTable = new Table(0, NumberEnum.TxAtt);
+    private Table attOffsetTable = null;//new Table(0, NumberEnum.TxAtt);
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -120,7 +121,9 @@ public class RFPulse {
 
         pulseDuration = timeTable.get(0).doubleValue();
         FrequencyOffsetTable = offsetFreqTab;
-        attOffsetTable = attOffsetPar;
+        if (attOffsetPar != null) {
+            attOffsetTable = attOffsetPar;
+        }
     }
 
     public static RFPulse createRFPulse(Sequence sequence, GeneratorSequenceParamEnum txAttParam, GeneratorSequenceParamEnum amplitudeTab, GeneratorSequenceParamEnum txPhaseTab,
@@ -143,6 +146,7 @@ public class RFPulse {
         return new RFPulse(sequence.getPublicParam(txAttParam.name()), sequence.getPublicTable(txAttOffsetParam.name()), sequence.getTable(amplitudeTab.name()), sequence.getTable(txPhaseTab.name()),
                 sequence.getPublicTable(timeTab.name()), (Shape) sequence.getTable(shape.name()), (Shape) sequence.getTable(shapePhaseShape.name()), sequence.getTable(offsetTab.name()));
     }
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  general  methods: get set
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -210,14 +214,20 @@ public class RFPulse {
         setSequenceTableSingleValue(attOffsetTable, attTable.get(0).intValue());
     }
 
-    public void createAttOffset(Sequence sequence, GeneratorSequenceParamEnum txAttOffsetParam) {
-        attOffsetTable = sequence.getPublicTable(txAttOffsetParam.name());
+    public boolean createAttOffset(Sequence sequence, GeneratorSequenceParamEnum txAttOffsetParam) {
+        if (sequence.getPublicTable(txAttOffsetParam.name()) != null) {
+            attOffsetTable = sequence.getPublicTable(txAttOffsetParam.name());
+            setAttOffset(0);
+            return true;
+        } else
+            return false;
     }
 
     public int getAttOffset() {
-        if (attOffsetTable.size() != 1)
-            Log.error(getClass(),"RFPulse:: the size of attOffsetTable is wrong");
-        return attOffsetTable.get(0).intValue();
+        if (attOffsetTable != null)
+            return attOffsetTable.get(0).intValue();
+        else
+            return -1;
     }
 
     public void setAmp(double amp) {
@@ -321,7 +331,8 @@ public class RFPulse {
         //}
         txAtt = ((NumberParam) attParam).getValue().intValue();
         //XG: adding txAttOffset, 2021/5/4
-        txAtt += attOffsetTable.get(0).intValue();
+        if (attOffsetTable != null)
+            txAtt += attOffsetTable.get(0).intValue();
 
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
@@ -347,7 +358,8 @@ public class RFPulse {
         //}
         txAtt = ((NumberParam) attParam).getValue().intValue();
         //XG: adding txAttOffset, 2021/5/4
-        txAtt += attOffsetTable.get(0).intValue();
+        if (attOffsetTable != null)
+            txAtt += attOffsetTable.get(0).intValue();
 
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
@@ -811,13 +823,13 @@ public class RFPulse {
 
     public void reoderOffsetFreq(int slicesAcquiredInSingleScan) {
         if (Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * slicesAcquiredInSingleScan != numberOfFreqOffset)
-            Log.error(getClass(),"floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * slicesAcquiredInSingleScan != numberOfFreqOffset");
+            Log.error(getClass(), "floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * slicesAcquiredInSingleScan != numberOfFreqOffset");
 
         double[] offset_table = new double[numberOfFreqOffset];
         int[] sliceNumber_table = new int[numberOfFreqOffset];
         for (int i = 0; i < Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan); i++) {
             for (int j = 0; j < slicesAcquiredInSingleScan; j++) {
-                sliceNumber_table[slicesAcquiredInSingleScan * i + j] = i + (int)Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * j;
+                sliceNumber_table[slicesAcquiredInSingleScan * i + j] = i + (int) Math.floor(numberOfFreqOffset / slicesAcquiredInSingleScan) * j;
             }
         }
 

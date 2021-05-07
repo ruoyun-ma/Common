@@ -58,6 +58,7 @@ public class InvRec implements ModelInterface {
         Time_grad_IR_ramp,
         Time_TI_delay,
         Tx_freq_offset_IR,
+        Tx_att_offset_IR,
         FreqOffset_tx_prep_IR,
         ;
     }
@@ -209,6 +210,9 @@ public class InvRec implements ModelInterface {
     protected void initPulseandGrad() {
         pulseTXIR = RFPulse.createRFPulse(parent.getSequence(), Tx_att, Tx_amp_180, Tx_phase_180,
                 SP.Time_tx_IR_length, Tx_shape_180, Tx_shape_phase_180, SP.Tx_freq_offset_IR);
+        if (parent.getSequence().getPublicTable(SP.Tx_att_offset_IR.name()) != null) {
+            pulseTXIR.createAttOffset(parent.getSequence(), SP.Tx_att_offset_IR);
+        }
     }
 
     protected void prepPulseComp() {

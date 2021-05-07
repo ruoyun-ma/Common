@@ -292,6 +292,9 @@ public abstract class KernelGE extends SeqPrep {
         // -----------------------------------------------
         set(Time_tx, txLength90);    // set RF pulse length to sequence
         pulseTX = RFPulse.createRFPulse(getSequence(), Tx_att, Tx_amp, Tx_phase, Time_tx, Tx_shape, Tx_shape_phase, Tx_freq_offset);
+        if (getSequence().getPublicTable(Tx_att_offset.name()) != null) {
+            pulseTX.createAttOffset(getSequence(), Tx_att_offset);
+        }
         double flip_angle = getDouble(FLIP_ANGLE);
 
         // -----------------------------------------------
@@ -307,10 +310,10 @@ public abstract class KernelGE extends SeqPrep {
                 notifyOutOfRangeParam(TX_LENGTH, pulseTX.getPulseDuration(), ((NumberParam) getParam(TX_LENGTH)).getMaxValue(), "Pulse length too short to reach RF power with this pulse shape");
                 txLength90 = pulseTX.getPulseDuration();
             }
-            pulseTX.prepAtt(80, getListInt(TX_ROUTE));
-            pulseTX.prepTxAmp(getListInt(TX_ROUTE));
             rfPulses.add(pulseTX);
             rfPulsesTree.put(pulseTX.getPower(), pulseTX);
+            rfPulsesAtt.add(pulseTX.prepAtt(80, getListInt(TX_ROUTE)));
+            pulseTX.prepTxAmp(getListInt(TX_ROUTE));
             getUPDisp();
         } else {
             pulseTX.setAtt(getInt(TX_ATT));
@@ -569,9 +572,6 @@ public abstract class KernelGE extends SeqPrep {
         // -------------------------------------------------------------------------------------------------
         // calculate Phase 2D, 3D and Read REWINDING - SPOILER area, check Grad_Spoil < GMAX
         // -------------------------------------------------------------------------------------------------
-
-        // timing : grad_phase_application_time must be < grad_spoiler_application_time if rewinding
-        //  boolean is_grad_rewinding = getBoolean(GRADIENT_ENABLE_REWINDING);// get slice refocussing ratio
         double grad_phase_application_time = getDouble(GRADIENT_PHASE_APPLICATION_TIME);
         double grad_spoiler_application_time = getDouble(GRADIENT_SPOILER_TIME);
         if (is_grad_rewinding && grad_phase_application_time > grad_spoiler_application_time) {

@@ -13,6 +13,9 @@ import static java.util.Arrays.asList;
 import common.*;
 import model.*;
 
+import java.util.Collections;
+import java.util.Iterator;
+
 import static common.CommonUP.*;
 import static common.CommonSP.*;
 
@@ -183,6 +186,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
                 if (models.get(modalName).getRfPulses() != null) {
                     rfPulses.add(models.get(modalName).getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
                     rfPulsesTree.put(models.get(modalName).getRfPulses().getPower(), models.get(modalName).getRfPulses());
+                    rfPulsesAtt.add(models.get(modalName).getRfPulses().prepAtt(80, getListInt(TX_ROUTE)));
                 }
             }
         }
@@ -191,6 +195,22 @@ public abstract class SeqPrep extends SeqPrepBasics {
         if (getBoolean(TX_AMP_ATT_AUTO)) {
             RFPulse pulseMaxPower = rfPulsesTree.get(rfPulsesTree.lastKey());
             pulseMaxPower.prepAtt(80, getListInt(TX_ROUTE));
+
+            //---- local ATT
+            if (Collections.max(rfPulsesAtt) != Collections.min(rfPulsesAtt)) {
+                for (RFPulse eachPulse : rfPulses) {
+                    if (Math.abs(eachPulse.getAtt() - Collections.max(rfPulsesAtt))
+                            < Math.abs(eachPulse.getAtt() - Collections.min(rfPulsesAtt))) {
+                        if (eachPulse.getAttOffset() != -1) {
+                            eachPulse.setAttOffset(Collections.max(rfPulsesAtt) - Collections.min(rfPulsesAtt));
+                        }
+                    } else {
+                        if (eachPulse.getAttOffset() != -1) {
+                            eachPulse.setAttOffset(0);
+                        }
+                    }
+                }
+            }
 
             for (RFPulse eachPulse : rfPulses) {
                 eachPulse.prepTxAmp(getListInt(TX_ROUTE));
