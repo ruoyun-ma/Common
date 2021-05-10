@@ -4,30 +4,33 @@
          xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <groupId>rs2d-sequence</groupId>
-    <artifactId>sequence-parent</artifactId>
-    <packaging>pom</packaging>
-    <version>1.0</version>
-    <modules>
-        <module>sequence-kernel</module>
-        <module>sequence-common</module>
-    </modules>
+    <artifactId>sequence-common</artifactId>
+<!--    <packaging>pom</packaging>-->
+    <version>1.5</version>
+<!--    <modules>-->
+<!--        <module>sequence-kernel</module>-->
+<!--        <module>sequence-common</module>-->
+<!--    </modules>-->
     <properties>
 	    <spinlab.version>2021.01-NEXT</spinlab.version>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <maven.compiler.source>1.8</maven.compiler.source>
         <maven.compiler.target>1.8</maven.compiler.target>
+        <spinlab.version>2021.01</spinlab.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>rs2d</groupId>
             <artifactId>spinlab</artifactId>
-            <version>2020.03</version>
+            <version>${spinlab.version}</version>
+            <scope>provided</scope>
         </dependency>
-        <dependency>
-            <groupId>rs2d</groupId>
-            <artifactId>rs2d-commons</artifactId>
-            <version>2020.03</version>
-        </dependency>
+<!--        <dependency>-->
+<!--            <groupId>rs2d</groupId>-->
+<!--            <artifactId>rs2d-commons</artifactId>-->
+<!--            <version>${spinlab.version}</version>-->
+<!--            <scope>provided</scope>-->
+<!--        </dependency>-->
     </dependencies>
 </project>

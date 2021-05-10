@@ -1,17 +1,51 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<project xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd"
-         xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-    
-	<parent>
-        <artifactId>sequence-parent</artifactId>
-        <groupId>rs2d-sequence</groupId>
-        <version>1.0</version>
-		<relativePath>../pom.xml</relativePath>
-    </parent>
-	
+    <groupId>rs2d-sequence</groupId>
     <artifactId>sequence-common</artifactId>
-	<version>1.4</version>
+	<version>2.0-spinlab${spinlab.version}</version>
 
+    <properties>
+        <spinlab.version>2021.01-NEXT</spinlab.version>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+        <maven.compiler.source>1.8</maven.compiler.source>
+        <maven.compiler.target>1.8</maven.compiler.target>
+    </properties>
+
+    <repositories>
+        <repository>
+            <id>rs2d-public</id>
+            <url>http://maven.rs2d.com/</url>
+        </repository>
+        <repository>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+            </snapshots>
+            <id>rs2d</id>
+            <url>http://192.168.0.251/maven/</url>
+        </repository>
+    </repositories>
+
+    <dependencies>
+        <dependency>
+            <groupId>rs2d</groupId>
+            <artifactId>spinlab</artifactId>
+            <version>2021.01-NEXT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>rs2d</groupId>
+            <artifactId>rs2d-commons</artifactId>
+            <version>2021.01-NEXT</version>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-math3</artifactId>
+            <version>3.0</version>
+        </dependency>
+    </dependencies>
 </project>
