@@ -185,16 +185,16 @@ public abstract class SeqPrep extends SeqPrepBasics {
                 }
                 if (models.get(modalName).getRfPulses() != null) {
                     rfPulses.add(models.get(modalName).getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
-                    rfPulsesTree.put(models.get(modalName).getRfPulses().getPower(), models.get(modalName).getRfPulses());
-                    rfPulsesAtt.add(models.get(modalName).getRfPulses().prepAtt(80, getListInt(TX_ROUTE)));
                 }
             }
         }
 
         // we find MaxPower for all pulses including pulses in both model and imaging parts
         if (getBoolean(TX_AMP_ATT_AUTO)) {
-            RFPulse pulseMaxPower = rfPulsesTree.get(rfPulsesTree.lastKey());
-            pulseMaxPower.prepAtt(80, getListInt(TX_ROUTE));
+            for (RFPulse eachPulse:rfPulses) {
+                rfPulsesAtt.add(eachPulse.prepAtt(80, getListInt(TX_ROUTE)));
+            }
+            set(Tx_att,Collections.min(rfPulsesAtt));
 
             //---- local ATT
             if (Collections.max(rfPulsesAtt) != Collections.min(rfPulsesAtt)) {

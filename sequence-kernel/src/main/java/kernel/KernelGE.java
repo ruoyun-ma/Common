@@ -310,10 +310,9 @@ public abstract class KernelGE extends SeqPrep {
                 notifyOutOfRangeParam(TX_LENGTH, pulseTX.getPulseDuration(), ((NumberParam) getParam(TX_LENGTH)).getMaxValue(), "Pulse length too short to reach RF power with this pulse shape");
                 txLength90 = pulseTX.getPulseDuration();
             }
-            rfPulses.add(pulseTX);
-            rfPulsesTree.put(pulseTX.getPower(), pulseTX);
-            rfPulsesAtt.add(pulseTX.prepAtt(80, getListInt(TX_ROUTE)));
+            pulseTX.prepAtt(80, getListInt(TX_ROUTE));
             pulseTX.prepTxAmp(getListInt(TX_ROUTE));
+            rfPulses.add(pulseTX);
             getUPDisp();
         } else {
             pulseTX.setAtt(getInt(TX_ATT));
