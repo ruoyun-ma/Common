@@ -67,16 +67,24 @@ public class WatSat implements ModelInterface {
         ;
     }
 
+    public WatSat() {
+    }
+
     public WatSat(SeqPrep parent) {
         this.parent = parent;
     }
 
-    @Override
     public void init() {
         parent.setSuggestedValFromListString(parent.tx_shape, true, UP.WATSAT_TX_SHAPE);
 
         isWatSatEnabled = parent.getBoolean(UP.WATSAT_ENABLED);
         isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override

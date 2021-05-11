@@ -42,16 +42,21 @@ public class FlyBack implements ModelInterface {
         ;
     }
 
+    public FlyBack() {
+    }
 
     public FlyBack(SeqPrep parent) {
         this.parent = parent;
     }
 
-
-
-    @Override
     public void init() {
         isFlyBackEnabled = parent.getBoolean(UP.FLYBACK);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override

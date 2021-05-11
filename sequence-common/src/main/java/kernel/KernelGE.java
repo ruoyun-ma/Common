@@ -173,7 +173,7 @@ public abstract class KernelGE extends SeqPrep {
     //--------------------------------------------------------------------------------------
     @Override
     protected void iniModels() {
-        setModels(new ArrayList<>(Arrays.asList("ExtTrig")), this);
+        setModels(new ArrayList<>(Arrays.asList(new ExtTrig())), this);
     }
 
     @Override
@@ -212,7 +212,7 @@ public abstract class KernelGE extends SeqPrep {
 
         //Dynamic and multi echo are filled into the 4th Dimension for 2D Imaging
         if (isMultiplanar) {
-            nb_scan_4d = ((ExtTrig) models.get("ExtTrig")).nb_trigger * nb_dynamic_acquisition;
+            nb_scan_4d = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
         } else {
             nb_scan_4d = Math.max(acqMatrixDimension4D / nb_interleaved_slice, 1);
         }
@@ -369,7 +369,7 @@ public abstract class KernelGE extends SeqPrep {
     @Override
     protected void prepDicom() {
         // Set  TRIGGER_TIME for dynamic or trigger acquisition
-        if (isDynamic && (nb_dynamic_acquisition != 1) && !models.get("ExtTrig").isEnabled()) {
+        if (isDynamic && (nb_dynamic_acquisition != 1) && !models.get(ExtTrig.class).isEnabled()) {
             ArrayList<Number> arrayListTrigger = new ArrayList<>();
             for (int i = 0; i < nb_dynamic_acquisition; i++) {
                 arrayListTrigger.add(i * time_between_frames);
@@ -446,15 +446,15 @@ public abstract class KernelGE extends SeqPrep {
     @Override
     protected void getAcq4D() {
         // Avoid multi trigger time when  Multi echo or dynamic
-        if (((ExtTrig) models.get("ExtTrig")).nb_trigger != 1 && (isDynamic)) {
-            double tmp = ((ExtTrig) models.get("ExtTrig")).triggerTime.get(0);
-            ((ExtTrig) models.get("ExtTrig")).triggerTime.clear();
-            ((ExtTrig) models.get("ExtTrig")).triggerTime.add(tmp);
-            ((ExtTrig) models.get("ExtTrig")).nb_trigger = 1;
+        if (models.get(ExtTrig.class).nb_trigger != 1 && (isDynamic)) {
+            double tmp = models.get(ExtTrig.class).triggerTime.get(0);
+            models.get(ExtTrig.class).triggerTime.clear();
+            models.get(ExtTrig.class).triggerTime.add(tmp);
+            models.get(ExtTrig.class).nb_trigger = 1;
         }
         if (isMultiplanar) {
-            acqMatrixDimension4D = ((ExtTrig) models.get("ExtTrig")).nb_trigger * nb_dynamic_acquisition;
-            userMatrixDimension4D = ((ExtTrig) models.get("ExtTrig")).nb_trigger * nb_dynamic_acquisition;
+            acqMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
+            userMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
         } else {
             acqMatrixDimension4D = userMatrixDimension4D;
         }
@@ -677,12 +677,12 @@ public abstract class KernelGE extends SeqPrep {
         ArrayList<Number> multiseries_valuesList = new ArrayList<>();
         String multiseries_parametername = "";
 
-        if (models.get("ExtTrig").isEnabled() && ((ExtTrig) models.get("ExtTrig")).nb_trigger != 1) {
-            number_of_MultiSeries = ((ExtTrig) models.get("ExtTrig")).nb_trigger;
+        if (models.get(ExtTrig.class).isEnabled() && models.get(ExtTrig.class).nb_trigger != 1) {
+            number_of_MultiSeries = models.get(ExtTrig.class).nb_trigger;
             time_between_MultiSeries = frame_acquisition_time;
             multiseries_parametername = "TRIGGER DELAY";
             for (int i = 0; i < number_of_MultiSeries; i++) {
-                double multiseries_value = Math.round(((ExtTrig) models.get("ExtTrig")).triggerTime.get(i) * 1e5) / 1e2;
+                double multiseries_value = Math.round(models.get(ExtTrig.class).triggerTime.get(i) * 1e5) / 1e2;
                 multiseries_valuesList.add(multiseries_value);
             }
         }

@@ -52,13 +52,21 @@ public class VFL implements ModelInterface {
     protected enum SP implements GeneratorSequenceParamEnum {
     }
 
+    public VFL() {
+    }
+
     public VFL(SeqPrep parent) {
         this.parent = parent;
     }
 
-    @Override
     public void init() {
         isVFLEnabled = parent.getBoolean(UP.FLIP_ANGLE_REFOC_VFL);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override

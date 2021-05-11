@@ -96,11 +96,19 @@ public class SatBand implements ModelInterface {
         ;
     }
 
+    public SatBand() {
+    }
+
     public SatBand(SeqPrep parent) {
         this.parent = parent;
     }
 
     @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
+    }
+
     public void init() {
         parent.setSuggestedValFromListString(parent.tx_shape, true, UP.SATBAND_TX_SHAPE);
 
@@ -466,17 +474,17 @@ public class SatBand implements ModelInterface {
                 time_tau_sat = parent.getDouble(UP.SATBAND_TAU);
             } else {
 //                //time_tau_sat = TimeEvents.getTimeBetweenEvents(parent.getSequence(), Events.FatSatPulse.ID, Events.TX90.ID);
-                if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
-                    time_tau_sat += parent.models.get("FatSatWep").getDuration();
-                } else if (parent.models.containsKey("FatSat")) {
-                    time_tau_sat += parent.models.get("FatSat").getDuration();
+                if (parent.models.contains(FatSat.class) && parent.models.contains(FatSatWep.class)) {
+                    time_tau_sat += parent.models.get(FatSatWep.class).getDuration();
+                } else if (parent.models.contains(FatSat.class)) {
+                    time_tau_sat += parent.models.get(FatSat.class).getDuration();
                 }
 
-                if (parent.models.containsKey("InvRec")) {
+                if (parent.models.contains(InvRec.class)) {
                     time_tau_sat += parent.getSequenceTable(InvRec.SP.Time_TI_delay).getMaxValue();
                 }
 
-                if (parent.models.containsKey("TofSat")) {
+                if (parent.models.contains(TofSat.class)) {
                     time_tau_sat += parent.getSequenceTable(TofSat.SP.Time_flow).getMaxValue();
                 }
 

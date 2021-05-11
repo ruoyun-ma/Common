@@ -63,11 +63,13 @@ public class InvRec implements ModelInterface {
         ;
     }
 
+    public InvRec() {
+    }
+
     public InvRec(SeqPrep parent) {
         this.parent = parent;
     }
 
-    @Override
     public void init() {
         time_TI_delay = parent.getSequenceTable(SP.Time_TI_delay);
 
@@ -75,6 +77,12 @@ public class InvRec implements ModelInterface {
         inversionRecoveryTime = parent.getListDouble(UP.INVERSION_TIME_MULTI);
         nb_inversionRecovery = isInvRecEnabled ? inversionRecoveryTime.size() : 1;
         isInvRecEnabled = isInvRecEnabled && (nb_inversionRecovery >= 1);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override
@@ -124,13 +132,13 @@ public class InvRec implements ModelInterface {
                 time0_IR_90 += parent.getDouble(GRADIENT_RISE_TIME)
                         + (parent.hasParam(TX_LENGTH_90) ? parent.getDouble(TX_LENGTH_90) : parent.getDouble(TX_LENGTH)) / 2;
             }
-            if (parent.models.containsKey("SatBand")) {
-                time0_IR_90 += parent.models.get("SatBand").getDuration();
+            if (parent.models.contains(SatBand.class)) {
+                time0_IR_90 += parent.models.get(SatBand.class).getDuration();
             }
-            if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
-                time0_IR_90 += parent.models.get("FatSatWep").getDuration();
-            } else if (parent.models.containsKey("FatSat")) {
-                time0_IR_90 += parent.models.get("FatSat").getDuration();
+            if (parent.models.contains(FatSat.class) && parent.models.contains(FatSatWep.class)) {
+                time0_IR_90 += parent.models.get(FatSatWep.class).getDuration();
+            } else if (parent.models.contains(FatSat.class)) {
+                time0_IR_90 += parent.models.get(FatSat.class).getDuration();
             }
 
             boolean increaseTI = false;

@@ -70,16 +70,24 @@ public class FatSat implements ModelInterface {
         ;
     }
 
+    public FatSat() {
+    }
+
     public FatSat(SeqPrep parent) {
         this.parent = parent;
     }
 
-    @Override
     public void init() {
         parent.setSuggestedValFromListString(parent.tx_shape, true, UP.FATSAT_TX_SHAPE);
 
         isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
         isFatSatEnabled = parent.getBoolean(UP.FAT_SATURATION_ENABLED);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override

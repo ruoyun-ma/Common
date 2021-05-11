@@ -38,10 +38,9 @@ import static common.CommonSP.*;
  */
 
 public abstract class SeqPrepBasics extends BaseSequenceGenerator {
-    public TreeMap<String, ModelInterface> models = new TreeMap<>();
+    public final ModelContainer models = new ModelContainer();
     public List<Integer> rfPulsesAtt = new ArrayList<>();
     public List<RFPulse> rfPulses = new ArrayList<>();
-    public List<String> modelNames;
     public RFPulse pulseTX;
     public RFPulse pulseTX90; //TODO:XG: we better unify them in future
     public RFPulse pulseTX180;
@@ -239,16 +238,10 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     //--------------------------------------------------------------------------------------
     // basic functions
     //--------------------------------------------------------------------------------------
-    public void setModels(List<String> modalNames, SeqPrep seqPrep) {
-        this.modelNames = modalNames;
-        ModelFactory modelFactory = new ModelFactory();
-
-        if (this.modelNames != null) {
-            for (String modalName : this.modelNames) {
-                ModelInterface eachModel = modelFactory.getModel(modalName, seqPrep);
-                eachModel.init();
-                models.put(modalName, eachModel);
-            }
+    public void setModels(List<ModelInterface> modelClass, SeqPrep seqPrep) {
+        models.addAll(modelClass);
+        for (ModelInterface eachModel : modelClass) {
+            eachModel.init(seqPrep);
         }
     }
 

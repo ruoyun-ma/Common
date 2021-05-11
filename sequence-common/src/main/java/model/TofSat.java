@@ -49,12 +49,13 @@ public class TofSat extends SatBand {
         ;
     }
 
-    public TofSat(SeqPrep parent) {
-        super(parent);
-        this.parent = parent;
+    public TofSat() {
     }
 
-    @Override
+    public TofSat(SeqPrep parent) {
+        super(parent);
+    }
+
     public void init() {
         super.init();
         //isTofBandEnabled = parent.getBoolean(MULTI_PLANAR_EXCITATION) && parent.getBoolean(UP.TOF2D_ENABLED); // TOF not allowed in 3D
@@ -117,15 +118,15 @@ public class TofSat extends SatBand {
                         + parent.getDouble(ECHO_TIME)
                         + parent.getSequenceTable(Time_rx).get(0).doubleValue() / 2;
 
-                if (parent.models.containsKey("SatBand")) {
+                if (parent.models.contains(SatBand.class)) {
                     time += parent.getSequenceTable(SatBand.SP.Time_delay_sb).get(0).doubleValue();
                 }
-                if (parent.models.containsKey("FatSat") && parent.models.containsKey("FatSatWep")) {
-                    time += parent.models.get("FatSatWep").getDuration();
-                } else if (parent.models.containsKey("FatSat")) {
-                    time += parent.models.get("FatSat").getDuration();
+                if (parent.models.contains(FatSat.class) && parent.models.contains(FatSatWep.class)) {
+                    time += parent.models.get(FatSatWep.class).getDuration();
+                } else if (parent.models.contains(FatSat.class)) {
+                    time += parent.models.get(FatSat.class).getDuration();
                 }
-                if (parent.models.containsKey("InvRec")) {
+                if (parent.models.contains(InvRec.class)) {
                     time += parent.getSequenceTable(InvRec.SP.Time_TI_delay).getMaxValue();
                 }
 //                System.out.println("time" + time);

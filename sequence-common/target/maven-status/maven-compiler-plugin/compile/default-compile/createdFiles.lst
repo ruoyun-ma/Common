@@ -21,7 +21,6 @@ model\PSS.class
 common\Gradient2Event.class
 model\VFL$SP.class
 model\InvRec.class
-model\ModelFactory.class
 model\VFL$UP.class
 model\FatSat.class
 kernel\SeqPrepBasics.class
@@ -33,6 +32,7 @@ model\ExtTrig$UP.class
 kernel\KernelGE$SP.class
 kernel\KernelGE$UP.class
 common\Gradient5Event.class
+model\ModelContainer.class
 model\WatSat$UP.class
 model\SatBand.class
 common\Gradient.class

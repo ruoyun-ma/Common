@@ -48,11 +48,13 @@ public class ExtTrig implements ModelInterface {
         Time_trigger_delay;
     }
 
+    public ExtTrig() {
+    }
+
     public ExtTrig(SeqPrep parent) {
         this.parent = parent;
     }
 
-    @Override
     public void init() {
         triggerChanel = parent.getParam(UP.TRIGGER_CHANEL);
         triggerChanel.setSuggestedValues(asList(
@@ -67,6 +69,12 @@ public class ExtTrig implements ModelInterface {
         triggerTime = parent.getListDouble(UP.TRIGGER_TIME);
         nb_trigger = isTriggerEnabled ? triggerTime.size() : 1;
         isTriggerEnabled = isTriggerEnabled && (nb_trigger > 0);
+    }
+
+    @Override
+    public void init(SeqPrep parent) {
+        this.parent = parent;
+        init();
     }
 
     @Override

@@ -33,6 +33,8 @@ public class FatSatWep extends FatSat {
         Freq_offset_tx_fs_wep,
         ;
     }
+    public FatSatWep() {
+    }
 
     public FatSatWep(SeqPrep parent) {
         super(parent);

@@ -15,6 +15,7 @@ import model.*;
 
 import java.util.Collections;
 import java.util.Iterator;
+import java.util.Map;
 
 import static common.CommonUP.*;
 import static common.CommonSP.*;
@@ -124,13 +125,9 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
     @Override
     protected void iniFinalModels() throws Exception {
-        if (this.modelNames != null) {
-            for (String modalName : this.modelNames) {
-                ModelInterface eachModel = models.get(modalName);
-                eachModel.initFinal();
-                models.put(modalName, eachModel);
-                System.out.println(modalName + " " + eachModel.isEnabled());
-            }
+        for (ModelInterface eachModel : models) {
+            eachModel.initFinal();
+            System.out.println(eachModel.getName() + " " + eachModel.isEnabled());
         }
     }
 
@@ -177,27 +174,27 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
     @Override
     protected void prepModels() throws Exception {
-        if (modelNames != null) {
-            for (String modalName : modelNames) {
-                for (int icyc = 0; icyc < 2; icyc++) {
-                    //cyc it 2 times in case of dependencies
-                    models.get(modalName).prep();
-                }
-                if (models.get(modalName).getRfPulses() != null) {
-                    rfPulses.add(models.get(modalName).getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
-                }
+
+        for (ModelInterface eachModel : models) {
+            for (int icyc = 0; icyc < 2; icyc++) {
+                //cyc it 2 times in case of dependencies
+                eachModel.prep();
+            }
+            if (eachModel.getRfPulses() != null) {
+                rfPulses.add(eachModel.getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
             }
         }
 
+
         // we find MaxPower for all pulses including pulses in both model and imaging parts
         if (getBoolean(TX_AMP_ATT_AUTO)) {
-            for (RFPulse eachPulse:rfPulses) {
+            for (RFPulse eachPulse : rfPulses) {
                 rfPulsesAtt.add(eachPulse.prepAtt(80, getListInt(TX_ROUTE)));
             }
-            set(Tx_att,Collections.min(rfPulsesAtt));
+            set(Tx_att, Collections.min(rfPulsesAtt));
 
             //---- local ATT
-            if (Collections.max(rfPulsesAtt) != Collections.min(rfPulsesAtt)) {
+            if (!Collections.max(rfPulsesAtt).equals(Collections.min(rfPulsesAtt))) {
                 for (RFPulse eachPulse : rfPulses) {
                     if (Math.abs(eachPulse.getAtt() - Collections.max(rfPulsesAtt))
                             < Math.abs(eachPulse.getAtt() - Collections.min(rfPulsesAtt))) {
@@ -219,10 +216,8 @@ public abstract class SeqPrep extends SeqPrepBasics {
             getUPDisp();
         }
 
-        if (modelNames != null) {
-            for (String modalName : modelNames) {
-                models.get(modalName).prepFinal();
-            }
+        for (ModelInterface eachModel : models) {
+            eachModel.prepFinal();
         }
     }
 
