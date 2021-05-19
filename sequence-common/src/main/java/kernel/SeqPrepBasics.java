@@ -42,10 +42,10 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public List<Integer> rfPulsesAtt = new ArrayList<>();
     public List<RFPulse> rfPulses = new ArrayList<>();
     public RFPulse pulseTX;
-    public RFPulse pulseTX90; //TODO:XG: we better unify them in future
+//    public RFPulse pulseTX90; //TODO:XG: we better unify them in future
     public RFPulse pulseTX180;
     public Gradient gradSlice;
-    public Gradient gradSlice90;
+//    public Gradient gradSlice90;
     public Gradient gradSlice180;
     public Gradient gradReadout;
 

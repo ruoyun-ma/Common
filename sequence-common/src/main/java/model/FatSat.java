@@ -156,7 +156,10 @@ public class FatSat implements ModelInterface {
         double RFDuration = parent.getSequenceTable(SP.Time_before_fs_pulse).get(0).doubleValue()
                 + parent.getSequenceTable(SP.Time_tx_fs).get(0).doubleValue()
                 + parent.getSequenceTable(SP.Time_grad_fs).get(0).doubleValue();
-        double Delay = parent.getSequenceTable(SP.Time_delay_fs).get(0).doubleValue();
+        double Delay = 0.0;
+        if (parent.getSequence().getPublicTable(SP.Time_delay_fs.name()) != null)
+            Delay = parent.getSequenceTable(SP.Time_delay_fs).get(0).doubleValue();
+
         double OverlapDuration = parent.getSequenceTable(SP.Time_grad_ramp_fs).get(0).doubleValue();
         double eachDuration = GradDuration + RFDuration - OverlapDuration + Delay;
 
@@ -179,6 +182,7 @@ public class FatSat implements ModelInterface {
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_fs.name()) != null) {
             pulseTXFatSat.createAttOffset(parent.getSequence(), SP.Tx_att_offset_fs);
         }
+
         pulseTXFatSat.setShape(parent.getText(UP.FATSAT_TX_SHAPE), parent.nb_shape_points, "Hamming");
 
         gradFatsatRead = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_fs_read, SP.Time_grad_fs,
@@ -246,10 +250,12 @@ public class FatSat implements ModelInterface {
     }
 
     protected void setSeqParamTime() {
+        if (parent.getSequence().getPublicTable(SP.Time_delay_fs.name()) != null){
         if (parent.hasParam(UP.FATSAT_DELAY))
             parent.set(SP.Time_delay_fs, UP.FATSAT_DELAY);
         else
             parent.set(SP.Time_delay_fs, parent.minInstructionDelay);
+        }
 
         double tx_bandwidth_90_fs = parent.getDouble(UP.FATSAT_BANDWIDTH);
         double tx_bandwidth_factor_90_fs = parent.getTx_bandwidth_factor(UP.FATSAT_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
@@ -275,6 +281,10 @@ public class FatSat implements ModelInterface {
     }
 
     protected void clcPulse() {
+        if (pulseTXFatSat == null){
+            System.out.println("00000000000000");
+
+        }
         if (!pulseTXFatSat.checkPower(getFlipAngle(), getFrequency(), parent.nucleus)) {
             double tx_length_90_fs = pulseTXFatSat.getPulseDuration();
             parent.set(SP.Time_tx_fs, tx_length_90_fs);

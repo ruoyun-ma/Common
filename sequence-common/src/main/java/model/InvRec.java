@@ -34,6 +34,7 @@ public class InvRec implements ModelInterface {
 
     protected enum UP implements GeneratorParamEnum {
         INVERSION_RECOVERY_ENABLED,
+        INVERSION_RECOVERY,
         INVERSION_TIME_MULTI,
         GRADIENT_ENABLE_CRUSHER_IR,
         GRADIENT_CRUSHER_IR_TOP_TIME,
@@ -73,7 +74,7 @@ public class InvRec implements ModelInterface {
     public void init() {
         time_TI_delay = parent.getSequenceTable(SP.Time_TI_delay);
 
-        isInvRecEnabled = parent.getBoolean(UP.INVERSION_RECOVERY_ENABLED);
+        isInvRecEnabled = parent.getBoolean(UP.INVERSION_RECOVERY_ENABLED) || parent.getBoolean(UP.INVERSION_RECOVERY);
         inversionRecoveryTime = parent.getListDouble(UP.INVERSION_TIME_MULTI);
         nb_inversionRecovery = isInvRecEnabled ? inversionRecoveryTime.size() : 1;
         isInvRecEnabled = isInvRecEnabled && (nb_inversionRecovery >= 1);
@@ -94,7 +95,7 @@ public class InvRec implements ModelInterface {
             inversionRecoveryTime.add(tmp);
             nb_inversionRecovery = 1;
         }
-
+        System.out.println("xxx isInvRecEnabled "+isInvRecEnabled);
         parent.set(SP.Grad_enable_IR, isInvRecEnabled);
         parent.set(SP.Tx_enable_IR, isInvRecEnabled);
         parent.set(SP.Grad_enable_crush_IR, isInvRecEnabled && parent.getBoolean(UP.GRADIENT_ENABLE_CRUSHER_IR));
@@ -228,9 +229,9 @@ public class InvRec implements ModelInterface {
             if (isInvRecEnabled) {
                 pulseTXIR.prepareOffsetFreqMultiSlice(parent.gradSlice180, parent.nb_planar_excitation, parent.spacingBetweenSlice, parent.off_center_distance_3D);
                 //TODO:XG: we need to check if it works for VFL cases
-                pulseTXIR.reoderOffsetFreq(parent.plugin, parent.acqMatrixDimension1D * parent.echoTrainLength, parent.nb_slices_acquired_in_single_scan);
+                pulseTXIR.reoderOffsetFreq(parent.plugin, parent.acqMatrixDimension1D * parent.echoTrainLength, parent.nb_interleaved_slice);
             }
-            pulseTXIR.setFrequencyOffset(isInvRecEnabled ? (parent.nb_slices_acquired_in_single_scan != 1 ? Order.ThreeLoop : Order.Three) : Order.FourLoop);
+            pulseTXIR.setFrequencyOffset(isInvRecEnabled ? (parent.nb_interleaved_slice != 1 ? Order.ThreeLoop : Order.Three) : Order.FourLoop);
         } else {
             if (isInvRecEnabled) {
                 pulseTXIR.prepareOffsetFreqMultiSlice(parent.gradSlice180, 1, 0, parent.off_center_distance_3D);

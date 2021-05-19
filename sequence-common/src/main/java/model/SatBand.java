@@ -185,7 +185,10 @@ public class SatBand implements ModelInterface {
         double RFDuration = 2 * parent.getSequenceTable(SP.Time_grad_ramp_sb).get(0).doubleValue()
                 + parent.getSequenceTable(SP.Time_tx_sb).get(0).doubleValue();
         double OverlapDuration = 0.0;
-        double Delay = parent.getSequenceTable(SP.Time_delay_sb).get(0).doubleValue();
+        double Delay = 0.0;
+        if (parent.getSequence().getPublicTable(SP.Time_delay_sb.name()) != null)
+            Delay = parent.getSequenceTable(SP.Time_delay_sb).get(0).doubleValue();
+
         double eachDuration = GradDuration + RFDuration - OverlapDuration + Delay;
 
         return eachDuration * nb_satband;
@@ -386,8 +389,8 @@ public class SatBand implements ModelInterface {
             for (int k = 0; k < parent.nb_planar_excitation; k++) {
                 if (parent.pulseTX != null && parent.gradSlice != null)
                     offsetFreqSBTable[k] = (parent.pulseTX.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
-                else if (parent.pulseTX90 != null && parent.gradSlice90 != null)
-                    offsetFreqSBTable[k] = (parent.pulseTX90.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
+//                else if (parent.pulseTX90 != null && parent.gradSlice90 != null)
+//                    offsetFreqSBTable[k] = (parent.pulseTX90.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
                 else
                     Log.error(getClass(), "RFPulse or Gradient Object pulseTX/pulseTX90 and gradSlice/gradSlice90 do not exist");
 
@@ -418,11 +421,12 @@ public class SatBand implements ModelInterface {
     }
 
     protected void setSeqParamTime() {
-        if (parent.hasParam(UP.SATBAND_DELAY))
-            parent.set(SP.Time_delay_sb, UP.SATBAND_DELAY);
-        else
-            parent.set(SP.Time_delay_sb, parent.minInstructionDelay);
-
+        if (parent.getSequence().getPublicTable(SP.Time_delay_sb.name()) != null) {
+            if (parent.hasParam(UP.SATBAND_DELAY))
+                parent.set(SP.Time_delay_sb, UP.SATBAND_DELAY);
+            else
+                parent.set(SP.Time_delay_sb, parent.minInstructionDelay);
+        }
         if (isSBorTBEnabled) {
             parent.set(SP.Time_grad_ramp_sb, parent.getDouble(GRADIENT_RISE_TIME));
             parent.set(SP.Time_grad_sb, 0.0005);

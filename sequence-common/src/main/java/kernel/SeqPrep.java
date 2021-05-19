@@ -189,7 +189,8 @@ public abstract class SeqPrep extends SeqPrepBasics {
         // we find MaxPower for all pulses including pulses in both model and imaging parts
         if (getBoolean(TX_AMP_ATT_AUTO)) {
             for (RFPulse eachPulse : rfPulses) {
-                rfPulsesAtt.add(eachPulse.prepAtt(80, getListInt(TX_ROUTE)));
+                if (eachPulse.getFlipAngle() > 0.0)
+                    rfPulsesAtt.add(eachPulse.prepAtt(80, getListInt(TX_ROUTE)));
             }
             set(Tx_att, Collections.min(rfPulsesAtt));
 
@@ -432,9 +433,11 @@ public abstract class SeqPrep extends SeqPrepBasics {
             if (getDouble(USER_PARTIAL_PHASE) <= 55)
                 getParam(USER_PARTIAL_PHASE).setValue(55.0); // for elliptical3D, minimum of 2D partialFourier set 55%
         }
+
         double partial_phase = getDouble(USER_PARTIAL_PHASE);
         acqMatrixDimension2D = floorEven(partial_phase / 100f * userMatrixDimension2D);
         acqMatrixDimension2D = (acqMatrixDimension2D < 4) && isEnablePhase ? 4 : acqMatrixDimension2D;
+
         getParam(USER_ZERO_FILLING_2D).setValue((100 - partial_phase));
         getParam(ACQUISITION_MATRIX_DIMENSION_2D).setValue(acqMatrixDimension2D);
     }

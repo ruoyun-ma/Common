@@ -90,6 +90,7 @@ public enum CommonUP implements GeneratorParamEnum {
     // TX
     TX_SHAPE,
     TX_SHAPE_90,
+    TX_SHAPE_180,
     TX_BANDWIDTH_FACTOR,
     TX_BANDWIDTH_FACTOR_3D,
     TX_LENGTH_90,

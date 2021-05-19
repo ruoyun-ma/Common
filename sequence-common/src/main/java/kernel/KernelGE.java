@@ -1,22 +1,13 @@
 package kernel;
 
-import rs2d.commons.log.Log;
-import rs2d.spinlab.instrument.Instrument;
 import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequence.SequenceTool;
-import rs2d.spinlab.sequence.element.Opcode;
-import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
 import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
-import rs2d.spinlab.sequenceGenerator.util.TimeEvents;
 import rs2d.spinlab.tools.param.*;
 import rs2d.spinlab.tools.table.Order;
 
 import java.util.*;
-
-import static common.CommonSP.Grad_shape_rise_down;
-import static common.CommonSP.Grad_shape_rise_up;
-import static common.CommonSP.Time_grad_ramp;
 import static java.util.Arrays.asList;
 
 import common.*;
@@ -364,6 +355,7 @@ public abstract class KernelGE extends SeqPrep {
 
         RFPulse pulseTXComp = RFPulse.createRFPulse(getSequence(), Time_grad_ramp, FreqOffset_tx_comp);
         pulseTXComp.setCompensationFrequencyOffset(pulseTX, grad_ratio_slice_refoc);
+
     }
 
     @Override

@@ -4,9 +4,11 @@ model\ModelInterface.class
 model\FlyBack$UP.class
 kernel\KernelGE.class
 model\FatSatWep$SP.class
+kernel\KernelSE$UP.class
 common\HardwareGradientDelay.class
 model\EPG.class
 model\FatSatWep$UP.class
+kernel\KernelSE$SP.class
 model\SatBand$SP.class
 model\SatBand$UP.class
 common\CommonSP.class
@@ -40,6 +42,7 @@ common\RFPulse.class
 model\FatSatWep.class
 common\HardwareB0comp.class
 model\WatSat$SP.class
+kernel\KernelSE.class
 model\ExtTrig.class
 model\InvRec$UP.class
 common\HardwareShim.class
