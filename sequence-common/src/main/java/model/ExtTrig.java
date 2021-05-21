@@ -34,7 +34,8 @@ public class ExtTrig implements ModelInterface {
     protected enum UP implements GeneratorParamEnum {
         TRIGGER_EXTERNAL,
         TRIGGER_TIME,
-        TRIGGER_CHANEL;
+        //TRIGGER_CHANEL,
+        ;
 
         @Override
         public Param build() {
@@ -56,15 +57,6 @@ public class ExtTrig implements ModelInterface {
     }
 
     public void init() {
-        triggerChanel = parent.getParam(UP.TRIGGER_CHANEL);
-        triggerChanel.setSuggestedValues(asList(
-                SequenceTool.ExtTrigSource.Ext1.name(),
-                SequenceTool.ExtTrigSource.Ext2.name(),
-                SequenceTool.ExtTrigSource.Ext1_AND_Ext2.name(),
-                SequenceTool.ExtTrigSource.Ext1_XOR_Ext2.name()));
-        triggerChanel.setRestrictedToSuggested(true);
-
-
         isTriggerEnabled = parent.getBoolean(UP.TRIGGER_EXTERNAL);
         triggerTime = parent.getListDouble(UP.TRIGGER_TIME);
         nb_trigger = isTriggerEnabled ? triggerTime.size() : 1;
@@ -98,7 +90,7 @@ public class ExtTrig implements ModelInterface {
                 time_external_trigger_delay_max = Math.max(time_external_trigger_delay_max, time_external_trigger_delay);
             }
         }
-        parent.set(SP.Ext_trig_source, UP.TRIGGER_CHANEL);
+        //parent.set(SP.Ext_trig_source, UP.TRIGGER_CHANEL);
     }
 
     @Override

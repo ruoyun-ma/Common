@@ -200,9 +200,10 @@ public class Gradient {
         return spoilerExcess;
     }
 
-    public double getGradientShapeRiseTime(){
+    public double getGradientShapeRiseTime() {
         return grad_shape_rise_time;
     }
+
     public double getMinTopTime() {
         return minTopTime;
     }
@@ -407,21 +408,18 @@ public class Gradient {
     }
 
     //    refocalize the gradient with ratio of the top
-    public void refocalizeGradient_singleValue(Gradient gradToRef, double ratio) {
+    //    blockID is  either 1 ramp up or 3 rampDown
+    public void refocalizeGradient_singleValue(Gradient gradToRef, double ratio, int blockID, int i_gradToRef) {
         bStaticGradient = true;
-        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(blockID)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
         if (Double.isNaN(equivalentTime)) {
             prepareEquivalentTime();
         }
 
         double amp;
         if (gradToRef.getSteps() > 1) {
-            amp = gradToRef.getAmplitudeArray(0);
             amplitudeArray = new double[1];
-            for (int i = 0; i < 1; i++) {
-                amplitudeArray[i] = -(ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
-//                    amplitudeArray[i] = -gradToRef.getAmplitudeArray(i);
-            }
+            amplitudeArray[0] = -(ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i_gradToRef) * gradToRefTime) / (equivalentTime);
             steps = 1;
         } else {
             amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
@@ -431,7 +429,11 @@ public class Gradient {
         }
     }
 
-    //    refocalize the gradient with ratio of the top
+    public void refocalizeGradient(Gradient gradToRef, double ratio, int blockID) {
+        refocalizeGradient_singleValue(gradToRef, ratio, blockID, 0);
+    }
+
+        //    refocalize the gradient with ratio of the top
     public void refocalizeGradient(Gradient gradToRef, double ratio) {
         bStaticGradient = true;
         double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
@@ -453,28 +455,6 @@ public class Gradient {
             double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
             staticArea = -gradArea;
             calculateStaticAmplitude();
-        }
-    }
-
-    //    refocalize the gradient of certain step with ratio of the top
-    public void refocalizeGradient(Gradient gradToRef, int step, double ratio) {
-        bStaticGradient = true;
-        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
-        if (Double.isNaN(equivalentTime)) {
-            prepareEquivalentTime();
-        }
-
-        double amp;
-        amplitudeArray = null;
-        if (gradToRef.getSteps() > 1) {
-            amp = gradToRef.getAmplitudeArray(step);
-            double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
-
-            staticArea = -gradArea;
-            steps = 1;
-            calculateStaticAmplitude();
-        } else {
-            refocalizeGradient(gradToRef, ratio);
         }
     }
 

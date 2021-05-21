@@ -512,13 +512,13 @@ public abstract class KernelGE extends SeqPrep {
         // pre-calculate READ_prephasing max area
         gradReadPrep = Gradient.createGradient(getSequence(), Grad_amp_read_prep, Time_grad_phase_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
         if (isEnableRead) {
-            gradReadPrep.refocalizeGradient(gradReadout, getDouble(PREPHASING_READ_GRADIENT_RATIO));
+            gradReadPrep.refocalizeGradient_singleValue(gradReadout, getDouble(PREPHASING_READ_GRADIENT_RATIO), 1, 0);
         }
 
         // pre-calculate SLICE_refocusing
         gradSliceRefPhase3D = Gradient.createGradient(getSequence(), Grad_amp_phase_3D_prep, Time_grad_phase_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
         if (isEnableSlice) {
-            gradSliceRefPhase3D.refocalizeGradient(gradSlice, getDouble(SLICE_REFOCUSING_GRADIENT_RATIO));
+            gradSliceRefPhase3D.refocalizeGradient(gradSlice, getDouble(SLICE_REFOCUSING_GRADIENT_RATIO),3);
         }
     }
 
@@ -580,7 +580,7 @@ public abstract class KernelGE extends SeqPrep {
             if (isEnablePhase3D)
                 gradSliceSpoiler.refocalizePhaseEncodingGradient(gradSliceRefPhase3D);
             if (isEnableSlice)
-                gradSliceSpoiler.refocalizeGradient(gradSlice, 1 - getDouble(SLICE_REFOCUSING_GRADIENT_RATIO));
+                gradSliceSpoiler.refocalizeGradient(gradSlice, 1 - getDouble(SLICE_REFOCUSING_GRADIENT_RATIO), 1);
             if (isEnablePhase)
                 gradPhaseSpoiler.refocalizePhaseEncodingGradient(gradPhase2D);
             if (isEnableRead)
