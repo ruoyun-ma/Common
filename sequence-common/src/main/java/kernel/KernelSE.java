@@ -764,9 +764,9 @@ public abstract class KernelSE extends SeqPrep {
 
     @Override
     protected void getCrusherGrad() {
-        double grad_amp_crusher;
-        double time_grad_crusher_top;
-        double grad_area_crusher;
+        double time_grad_crusher_top = minInstructionDelay;
+        double grad_amp_crusher = 0.0;
+        double grad_area_crusher = 0.0;
 
         if (isMultiplanar) {
             grad_area_crusher = getDouble(GRADIENT_AREA_CRUSHER_PI) / ((GradientMath.GAMMA) * sliceThickness);
@@ -779,10 +779,9 @@ public abstract class KernelSE extends SeqPrep {
             gradSliceCrusher.addSpoiler(grad_amp_crusher);
             gradSliceCrusher.applyAmplitude();
         } else {
-            time_grad_crusher_top = minInstructionDelay;
-            getParam(GRADIENT_CRUSHER_TOP_TIME).setValue(time_grad_crusher_top);
-            grad_area_crusher = 0.0;
             set(Time_grad_crusher_top, time_grad_crusher_top);
+            getParam(GRADIENT_CRUSHER_TOP_TIME).setValue(time_grad_crusher_top);
+            getParam(GRADIENT_AMP_CRUSHER).setValue(grad_amp_crusher);
             getParam(GRADIENT_AREA_CRUSHER).setValue(grad_area_crusher);
             getParam(GRADIENT_AREA_CRUSHER_PI).setValue(grad_area_crusher * (GradientMath.GAMMA) * sliceThickness);
         }
