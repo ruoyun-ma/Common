@@ -422,8 +422,6 @@ public abstract class KernelSE extends SeqPrep {
             pulseTX.setAtt(getInt(TX_ATT));
             pulseTX.setAmp(getDouble(TX_AMP_90));
             pulseTX180.setAmp(getParam(TX_AMP_180));
-            this.getParam(TX_AMP_90).setValue(pulseTX.getAmp90());     // display 90° amplitude
-            this.getParam(TX_AMP_180).setValue(pulseTX180.getAmp180());   // display 180° amplitude
         }
 
         // -----------------------------------------------
