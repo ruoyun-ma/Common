@@ -1,6 +1,7 @@
 package common;
 
 
+import rs2d.commons.log.Log;
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
 import rs2d.spinlab.hardware.devices.DeviceManager;
 import rs2d.spinlab.instrument.util.GradientMath;
@@ -433,7 +434,7 @@ public class Gradient {
         refocalizeGradient_singleValue(gradToRef, ratio, blockID, 0);
     }
 
-        //    refocalize the gradient with ratio of the top
+    //    refocalize the gradient with ratio of the top
     public void refocalizeGradient(Gradient gradToRef, double ratio) {
         bStaticGradient = true;
         double gradToRefTime = (gradToRef.getEquivalentTimeBlock(3)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
@@ -738,6 +739,25 @@ public class Gradient {
         staticArea = prepPhaseGradTotalArea(step, fovDim);
         amplitude = staticArea / equivalentTime;
         return amplitude <= 100.0;
+    }
+
+    //XG: shift phase encoding for real partial fourier, after PE prepared
+    public void shiftPE4PF(int matrixDimensionForCheck) {
+        if (bPhaseEncoding) {
+            double grad_total_area_phase = prepPhaseGradTotalArea(matrixDimensionForCheck, fovPhase);
+            double grad_index_max_phase = prepPhaseGradIndexMax(isKSCentred);
+            double grad_total_amp_phase = grad_total_area_phase / equivalentTime;
+            maxAreaPE = grad_index_max_phase * grad_total_area_phase;
+            double shiftPF = Math.abs(grad_index_max_phase * grad_total_amp_phase) - Math.abs(amplitudeArray[0]);
+            for (int i = 0; i < amplitudeArray.length; i++) {
+                if (amplitudeArray[0] < 0)
+                    amplitudeArray[i] -= shiftPF;
+                else
+                    amplitudeArray[i] += shiftPF;
+            }
+        } else {
+            Log.error(getClass(), "Shifting PE for partial fourier can be only called AFTER PE is prepared");
+        }
     }
 
     public double getShapeFactor() {

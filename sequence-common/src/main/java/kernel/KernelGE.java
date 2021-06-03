@@ -8,6 +8,7 @@ import rs2d.spinlab.tools.param.*;
 import rs2d.spinlab.tools.table.Order;
 
 import java.util.*;
+
 import static java.util.Arrays.asList;
 
 import common.*;
@@ -335,8 +336,8 @@ public abstract class KernelGE extends SeqPrep {
         if (isMultiplanar && nb_planar_excitation > 1 && isEnableSlice) {
             //MULTI-PLANAR case : calculation of frequency offset table
             pulseTX.prepareOffsetFreqMultiSlice(gradSlice, nb_planar_excitation, spacingBetweenSlice, off_center_distance_3D);
-            pulseTX.reoderOffsetFreq(plugin, acqMatrixDimension1D, nb_slices_acquired_in_single_scan);
-            pulseTX.setFrequencyOffset(nb_slices_acquired_in_single_scan != 1 ? Order.ThreeLoop : Order.Three);
+            pulseTX.reoderOffsetFreq(plugin, acqMatrixDimension1D * echoTrainLength, nb_interleaved_slice);
+            pulseTX.setFrequencyOffset(nb_interleaved_slice != 1 ? Order.ThreeLoop : Order.Three);
         } else {
             //3D CASE :
             pulseTX.prepareOffsetFreqMultiSlice(gradSlice, 1, 0, off_center_distance_3D);
@@ -442,12 +443,9 @@ public abstract class KernelGE extends SeqPrep {
             models.get(ExtTrig.class).triggerTime.add(tmp);
             models.get(ExtTrig.class).nb_trigger = 1;
         }
-        if (isMultiplanar) {
+        if (isMultiplanar)
             acqMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
-            userMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
-        } else {
-            acqMatrixDimension4D = userMatrixDimension4D;
-        }
+        userMatrixDimension4D = acqMatrixDimension4D;
 
         getParam(ACQUISITION_MATRIX_DIMENSION_4D).setValue(isKSCenterMode ? 1 : acqMatrixDimension4D);
         getParam(USER_MATRIX_DIMENSION_4D).setValue(userMatrixDimension4D);
@@ -516,7 +514,7 @@ public abstract class KernelGE extends SeqPrep {
         // pre-calculate SLICE_refocusing
         gradSliceRefPhase3D = Gradient.createGradient(getSequence(), Grad_amp_phase_3D_prep, Time_grad_phase_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
         if (isEnableSlice) {
-            gradSliceRefPhase3D.refocalizeGradient(gradSlice, getDouble(SLICE_REFOCUSING_GRADIENT_RATIO),3);
+            gradSliceRefPhase3D.refocalizeGradient(gradSlice, getDouble(SLICE_REFOCUSING_GRADIENT_RATIO), 3);
         }
     }
 
@@ -526,6 +524,7 @@ public abstract class KernelGE extends SeqPrep {
         gradPhase2D = Gradient.createGradient(getSequence(), Grad_amp_phase_2D_prep, Time_grad_phase_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
         if (isEnablePhase) {
             gradPhase2D.preparePhaseEncoding(acqMatrixDimension2D, fovPhase, is_k_s_centred);
+            gradPhase2D.shiftPE4PF(userMatrixDimension2D);
             gradPhase2D.reoderPhaseEncoding(plugin, 1, getInt(ACQUISITION_MATRIX_DIMENSION_2D), acqMatrixDimension1D);
         }
 

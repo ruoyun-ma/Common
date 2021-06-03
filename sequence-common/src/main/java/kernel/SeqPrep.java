@@ -82,7 +82,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
         nb_preScan = getInt(DUMMY_SCAN);
         nb_averages = getInt(NUMBER_OF_AVERAGES);
         nb_shoot_3d = getInt(NUMBER_OF_SHOOT_3D);
-        echoTrainLength = getInt(ECHO_TRAIN_LENGTH);
+        echoTrainLength = hasParam(ECHO_TRAIN_LENGTH)? getInt(ECHO_TRAIN_LENGTH) : 1;
 
         spectralWidth = getDouble(SPECTRAL_WIDTH);
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(TX_ROUTE).get(0));

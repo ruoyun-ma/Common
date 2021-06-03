@@ -111,7 +111,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public int nb_averages;
     public int nb_interleaved_slice;
     public int nb_planar_excitation;
-    public int nb_slices_acquired_in_single_scan;
+    //public int nb_slices_acquired_in_single_scan;
     public int nb_shoot_3d;
     public int nb_preScan;
     public int nb_echo_4D;
