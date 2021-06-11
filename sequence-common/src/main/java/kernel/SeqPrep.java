@@ -319,20 +319,20 @@ public abstract class SeqPrep extends SeqPrepBasics {
             set(Gradient_axe_read, GradientAxe.R);
         }
 
-        //XG:for 3D PE
-        if (hasParam(SWITCH_READ_SLICE)) {
-            boolean is_read_slice_inverted = getBoolean(SWITCH_READ_SLICE);
-            if (is_read_slice_inverted) {
-                set(Gradient_axe_slice, GradientAxe.R);
-                set(Gradient_axe_read, GradientAxe.S);
-                double off_center_distance_tmp = off_center_distance_3D;
-                off_center_distance_3D = off_center_distance_1D;
-                off_center_distance_1D = off_center_distance_tmp;
-            } else {
-                set(Gradient_axe_slice, GradientAxe.S);
-                set(Gradient_axe_read, GradientAxe.R);
-            }
-        }
+//        //XG:for 3D PE
+//        if (hasParam(SWITCH_READ_SLICE)) {
+//            boolean is_read_slice_inverted = getBoolean(SWITCH_READ_SLICE);
+//            if (is_read_slice_inverted) {
+//                set(Gradient_axe_slice, GradientAxe.R);
+//                set(Gradient_axe_read, GradientAxe.S);
+//                double off_center_distance_tmp = off_center_distance_3D;
+//                off_center_distance_3D = off_center_distance_1D;
+//                off_center_distance_1D = off_center_distance_tmp;
+//            } else {
+//                set(Gradient_axe_slice, GradientAxe.S);
+//                set(Gradient_axe_read, GradientAxe.R);
+//            }
+//        }
 
         getParam(OFF_CENTER_FIELD_OF_VIEW_3D).setValue(off_center_distance_3D);
         getParam(OFF_CENTER_FIELD_OF_VIEW_2D).setValue(off_center_distance_2D);

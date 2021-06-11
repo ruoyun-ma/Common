@@ -443,7 +443,7 @@ public abstract class KernelGE extends SeqPrep {
             models.get(ExtTrig.class).triggerTime.add(tmp);
             models.get(ExtTrig.class).nb_trigger = 1;
         }
-        if (isMultiplanar)
+        //if (isMultiplanar)
             acqMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
         userMatrixDimension4D = acqMatrixDimension4D;
 
