@@ -124,6 +124,7 @@ public class WatSat implements ModelInterface {
     public void prep() throws Exception {
         prepPulse();
         prepGrad();
+        prepPulseComp();
     }
 
     @Override
@@ -180,8 +181,15 @@ public class WatSat implements ModelInterface {
     }
 
     protected void prepGrad() {
-        double pixmax = Math.max(Math.max(parent.getDouble(RESOLUTION_FREQUENCY), parent.getDouble(RESOLUTION_PHASE)),
-                parent.getDouble(RESOLUTION_SLICE));
+        double pixmax;
+        if (parent.hasParam(RESOLUTION_FREQUENCY) && parent.hasParam(RESOLUTION_PHASE) && parent.hasParam(RESOLUTION_SLICE)){
+            pixmax = Math.max(Math.max(parent.getDouble(RESOLUTION_FREQUENCY), parent.getDouble(RESOLUTION_PHASE)),
+                    parent.getDouble(RESOLUTION_SLICE));
+        }else{
+            pixmax = Math.max(Math.max(parent.getDouble(FIELD_OF_VIEW), parent.getDouble(FIELD_OF_VIEW_PHASE)),
+                    parent.getDouble(FIELD_OF_VIEW_3D));
+        }
+
         if (isWatSatEnabled) {
             if (parent.hasParam(UP.WATSAT_SP_FACTOR)) {
                 gradFatsatRead.setSpoiler(parent.getDouble(UP.WATSAT_SP_FACTOR), pixmax, 0, 0);
@@ -201,6 +209,10 @@ public class WatSat implements ModelInterface {
         gradFatsatRead.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
         gradFatsatPhase.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
         gradFatsatSlice.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
+    }
+
+    protected void prepPulseComp() {
+        pulseTXWatSat.setFrequencyOffset(getFrequency()-parent.observeFrequency);
     }
 
     protected void initPulseandGrad() throws Exception {

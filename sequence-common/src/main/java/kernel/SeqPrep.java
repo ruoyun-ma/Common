@@ -405,6 +405,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
         // Pixel dimension calculation
         acqMatrixDimension1D = getInt(USER_MATRIX_DIMENSION_1D) * (isFovDoubled ? 2 : 1);
+        if(hasParam(RESOLUTION_FREQUENCY))
         getParam(RESOLUTION_FREQUENCY).setValue(fov_eff / acqMatrixDimension1D); // frequency true resolution for display
 
         // MATRIX

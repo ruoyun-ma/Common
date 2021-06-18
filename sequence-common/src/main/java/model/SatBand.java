@@ -242,6 +242,9 @@ public class SatBand implements ModelInterface {
 
         if (!(isTofBandEnabled && !parent.isMultiplanar))
             prepGradTable();
+        else{
+            offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+        }
 
         // Apply values ot Gradient
         gradSatBandSlice.setAmplitude(gradAmpSBSliceTable);

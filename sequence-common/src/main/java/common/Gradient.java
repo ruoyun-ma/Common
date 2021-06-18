@@ -1104,7 +1104,11 @@ public class Gradient {
         double grad_area_spoiler;
         double[] grad_amp_spoiler = new double[pixel_dimension.length];
         for (int i = 0; i < pixel_dimension.length; i++) {
-            grad_area_spoiler = factor / ((GradientMath.GAMMA / nucleus.getRatio()) * pixel_dimension[i]); //GradientMath.GAMMA: gamma/2pi  Hz/T-tour
+            if (pixel_dimension[i] != 0)
+                grad_area_spoiler = factor / ((GradientMath.GAMMA / nucleus.getRatio()) * pixel_dimension[i]); //GradientMath.GAMMA: gamma/2pi  Hz/T-tour
+            else
+                grad_area_spoiler = 0.0; //We see zero pixel length as zero spoiler area instead of infinite
+
             grad_amp_spoiler[i] = (grad_area_spoiler / equivalentTime) / gMax * 100.0;//
         }
 
