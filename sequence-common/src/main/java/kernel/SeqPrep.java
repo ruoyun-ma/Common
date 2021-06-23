@@ -124,6 +124,12 @@ public abstract class SeqPrep extends SeqPrepBasics {
     }
 
     @Override
+    protected void iniPreModels() throws Exception {
+        for (ModelInterface eachModel : models)
+            eachModel.initPre();
+    }
+
+    @Override
     protected void iniFinalModels() throws Exception {
         for (ModelInterface eachModel : models) {
             eachModel.initFinal();

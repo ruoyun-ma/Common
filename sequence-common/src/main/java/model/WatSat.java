@@ -70,21 +70,16 @@ public class WatSat implements ModelInterface {
     public WatSat() {
     }
 
-    public WatSat(SeqPrep parent) {
-        this.parent = parent;
-    }
-
-    public void init() {
-        parent.setSuggestedValFromListString(parent.tx_shape, true, UP.WATSAT_TX_SHAPE);
-
-        isWatSatEnabled = parent.getBoolean(UP.WATSAT_ENABLED);
-        isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
-    }
-
     @Override
     public void init(SeqPrep parent) {
         this.parent = parent;
-        init();
+        parent.setSuggestedValFromListString(parent.tx_shape, true, UP.WATSAT_TX_SHAPE);
+    }
+
+    @Override
+    public void initPre() throws Exception {
+        isWatSatEnabled = parent.getBoolean(UP.WATSAT_ENABLED);
+        isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
     }
 
     @Override
@@ -182,10 +177,10 @@ public class WatSat implements ModelInterface {
 
     protected void prepGrad() {
         double pixmax;
-        if (parent.hasParam(RESOLUTION_FREQUENCY) && parent.hasParam(RESOLUTION_PHASE) && parent.hasParam(RESOLUTION_SLICE)){
+        if (parent.hasParam(RESOLUTION_FREQUENCY) && parent.hasParam(RESOLUTION_PHASE) && parent.hasParam(RESOLUTION_SLICE)) {
             pixmax = Math.max(Math.max(parent.getDouble(RESOLUTION_FREQUENCY), parent.getDouble(RESOLUTION_PHASE)),
                     parent.getDouble(RESOLUTION_SLICE));
-        }else{
+        } else {
             pixmax = Math.max(Math.max(parent.getDouble(FIELD_OF_VIEW), parent.getDouble(FIELD_OF_VIEW_PHASE)),
                     parent.getDouble(FIELD_OF_VIEW_3D));
         }
@@ -212,7 +207,7 @@ public class WatSat implements ModelInterface {
     }
 
     protected void prepPulseComp() {
-        pulseTXWatSat.setFrequencyOffset(getFrequency()-parent.observeFrequency);
+        pulseTXWatSat.setFrequencyOffset(getFrequency() - parent.observeFrequency);
     }
 
     protected void initPulseandGrad() throws Exception {

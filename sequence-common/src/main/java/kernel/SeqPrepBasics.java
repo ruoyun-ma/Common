@@ -17,7 +17,6 @@ import rs2d.spinlab.tools.utility.Nucleus;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.TreeMap;
 
 import common.*;
 import model.*;
@@ -161,6 +160,11 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         // -----------------------------------------------
         // Ini Modality class
         // -----------------------------------------------
+        iniPreModels();
+
+        // -----------------------------------------------
+        // Ini Final Modality class
+        // -----------------------------------------------
         iniFinalModels();
 
         // -----------------------------------------------
@@ -215,6 +219,8 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     protected abstract void iniModels();
 
     protected abstract void iniTxRx() throws Exception;
+
+    protected abstract void iniPreModels() throws Exception;
 
     protected abstract void iniFinalModels() throws Exception;
 

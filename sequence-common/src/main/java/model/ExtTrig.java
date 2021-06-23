@@ -52,21 +52,17 @@ public class ExtTrig implements ModelInterface {
     public ExtTrig() {
     }
 
-    public ExtTrig(SeqPrep parent) {
+    @Override
+    public void init(SeqPrep parent) {
         this.parent = parent;
     }
 
-    public void init() {
+    @Override
+    public void initPre() throws Exception {
         isTriggerEnabled = parent.getBoolean(UP.TRIGGER_EXTERNAL);
         triggerTime = parent.getListDouble(UP.TRIGGER_TIME);
         nb_trigger = isTriggerEnabled ? triggerTime.size() : 1;
         isTriggerEnabled = isTriggerEnabled && (nb_trigger > 0);
-    }
-
-    @Override
-    public void init(SeqPrep parent) {
-        this.parent = parent;
-        init();
     }
 
     @Override

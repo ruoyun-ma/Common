@@ -627,7 +627,7 @@ public abstract class KernelGE extends SeqPrep {
         // Calculate delay between 4D acquisition
         //----------------------------------------------------------------------
         double frame_acquisition_time = nb_scan_1d * nb_scan_3d * nb_scan_2d * tr;
-        double time_between_frames_min = ceilToSubDecimal(frame_acquisition_time + minInstructionDelay + min_flush_delay, 1);
+        double time_between_frames_min = ceilToSubDecimal(frame_acquisition_time + minInstructionDelay + min_flush_delay, 3);
         time_between_frames = time_between_frames_min;
         double interval_between_frames_delay = min_flush_delay;
 

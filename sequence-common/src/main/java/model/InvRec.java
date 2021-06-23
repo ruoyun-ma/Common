@@ -67,23 +67,19 @@ public class InvRec implements ModelInterface {
     public InvRec() {
     }
 
-    public InvRec(SeqPrep parent) {
+    @Override
+    public void init(SeqPrep parent) {
         this.parent = parent;
     }
 
-    public void init() {
+    @Override
+    public void initPre() throws Exception {
         time_TI_delay = parent.getSequenceTable(SP.Time_TI_delay);
 
         isInvRecEnabled = parent.getBoolean(UP.INVERSION_RECOVERY_ENABLED) || parent.getBoolean(UP.INVERSION_RECOVERY);
         inversionRecoveryTime = parent.getListDouble(UP.INVERSION_TIME_MULTI);
         nb_inversionRecovery = isInvRecEnabled ? inversionRecoveryTime.size() : 1;
         isInvRecEnabled = isInvRecEnabled && (nb_inversionRecovery >= 1);
-    }
-
-    @Override
-    public void init(SeqPrep parent) {
-        this.parent = parent;
-        init();
     }
 
     @Override

@@ -55,18 +55,14 @@ public class VFL implements ModelInterface {
     public VFL() {
     }
 
-    public VFL(SeqPrep parent) {
-        this.parent = parent;
-    }
-
-    public void init() {
-        isVFLEnabled = parent.getBoolean(UP.FLIP_ANGLE_REFOC_VFL);
-    }
-
     @Override
     public void init(SeqPrep parent) {
         this.parent = parent;
-        init();
+    }
+
+    @Override
+    public void initPre() throws Exception {
+        isVFLEnabled = parent.getBoolean(UP.FLIP_ANGLE_REFOC_VFL);
     }
 
     @Override

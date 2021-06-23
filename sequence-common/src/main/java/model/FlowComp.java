@@ -47,18 +47,14 @@ public class FlowComp implements ModelInterface {
     public FlowComp() {
     }
 
-    public FlowComp(SeqPrep parent) {
-        this.parent = parent;
-    }
-
-    public void init() {
-        isFlowCompEnabled = parent.getBoolean(UP.FLOW_COMPENSATION);
-    }
-
     @Override
     public void init(SeqPrep parent) {
         this.parent = parent;
-        init();
+    }
+
+    @Override
+    public void initPre() throws Exception {
+        isFlowCompEnabled = parent.getBoolean(UP.FLOW_COMPENSATION);
     }
 
     @Override

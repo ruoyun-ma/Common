@@ -33,16 +33,18 @@ public class FatSatWep extends FatSat {
         Freq_offset_tx_fs_wep,
         ;
     }
+
     public FatSatWep() {
     }
 
-    public FatSatWep(SeqPrep parent) {
-        super(parent);
+    @Override
+    public void init(SeqPrep parent) {
+        super.init(parent);
     }
 
     @Override
-    public void init() {
-        super.init();
+    public void initPre() throws Exception {
+        super.initPre();
         isFatSatWepEnabled = parent.getBoolean(UP.FAT_SATURATION_WEP_ENABLED);
 
         if (isFatSatWepEnabled) { //FatSatWepEnabled has a higher priority than FatSatEnabled

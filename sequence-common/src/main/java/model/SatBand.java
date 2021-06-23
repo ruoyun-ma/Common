@@ -99,17 +99,9 @@ public class SatBand implements ModelInterface {
     public SatBand() {
     }
 
-    public SatBand(SeqPrep parent) {
-        this.parent = parent;
-    }
-
     @Override
     public void init(SeqPrep parent) {
         this.parent = parent;
-        init();
-    }
-
-    public void init() {
         parent.setSuggestedValFromListString(parent.tx_shape, true, UP.SATBAND_TX_SHAPE);
 
         List<String> satbandOrientationAllowed = asList("CRANIAL", "CAUDAL", "CRANIAL AND CAUDAL",
@@ -117,9 +109,12 @@ public class SatBand implements ModelInterface {
                 "RIGHT", "LEFT", "RIGHT AND LEFT",
                 "ALL");
         parent.setSuggestedValFromListString(satbandOrientationAllowed, true, UP.SATBAND_ORIENTATION);
+    }
 
-        isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
+    @Override
+    public void initPre() throws Exception {
         isSatBandEnabled = parent.getBoolean(UP.SATBAND_ENABLED);
+        isAttAuto = parent.getBoolean(TX_AMP_ATT_AUTO);
         position_sli_ph_rea = satBandPrep();
     }
 
@@ -242,7 +237,7 @@ public class SatBand implements ModelInterface {
 
         if (!(isTofBandEnabled && !parent.isMultiplanar))
             prepGradTable();
-        else{
+        else {
             offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
         }
 

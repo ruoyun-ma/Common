@@ -52,12 +52,18 @@ public class TofSat extends SatBand {
     public TofSat() {
     }
 
-    public TofSat(SeqPrep parent) {
-        super(parent);
+    public void init(SeqPrep parent) {
+        super.init(parent);
+
+        List<String> tmp_tx_shape = new ArrayList<>(parent.tx_shape);
+        tmp_tx_shape.add("RAMP");
+        this.parent.tx_shape = tmp_tx_shape;
     }
 
-    public void init() {
-        super.init();
+    @Override
+    public void initPre() throws Exception {
+        super.initPre();
+
         //isTofBandEnabled = parent.getBoolean(MULTI_PLANAR_EXCITATION) && parent.getBoolean(UP.TOF2D_ENABLED); // TOF not allowed in 3D
         isTofBandEnabled = parent.getBoolean(UP.TOF2D_ENABLED); //XG: now we do support 3D
 
@@ -67,9 +73,6 @@ public class TofSat extends SatBand {
                 parent.getParam(SatBand.UP.SATBAND_ENABLED).setValue(isSatBandEnabled);
             }
         }
-        List<String> tmp_tx_shape = new ArrayList<>(parent.tx_shape);
-        tmp_tx_shape.add("RAMP");
-        parent.tx_shape = tmp_tx_shape;
     }
 
     @Override
