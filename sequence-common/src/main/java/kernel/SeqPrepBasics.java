@@ -41,10 +41,10 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public List<Integer> rfPulsesAtt = new ArrayList<>();
     public List<RFPulse> rfPulses = new ArrayList<>();
     public RFPulse pulseTX;
-//    public RFPulse pulseTX90; //TODO:XG: we better unify them in future
+    //    public RFPulse pulseTX90; //TODO:XG: we better unify them in future
     public RFPulse pulseTX180;
     public Gradient gradSlice;
-//    public Gradient gradSlice90;
+    //    public Gradient gradSlice90;
     public Gradient gradSlice180;
     public Gradient gradReadout;
 
@@ -55,6 +55,8 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public final static int loopIndice_memory = 2048;
     public final static double defaultInstructionDelay = 0.000010;     // single instruction minimal duration
     public final static double minInstructionDelay = 0.000005;     // single instruction minimal duration
+    public final static double mingradientRasterTime = 5.213090909E-6;
+    public final static double gradientRasterTime = 57.344E-6; //11 * mingradientRasterTime;
 
     // Hardware
     public double blankingDelay;
@@ -550,6 +552,14 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
 
     public static double ceilToSubDecimal(double numberToBeRounded, double Order) {
         return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
+    }
+
+    public static double roundToGRT(double numberToBeRounded) {
+        return Math.round(numberToBeRounded / gradientRasterTime) * gradientRasterTime;
+    }
+
+    public static double ceilToGRT(double numberToBeRounded) {
+        return Math.ceil(numberToBeRounded / gradientRasterTime) * gradientRasterTime;
     }
 
     public Table setSequenceTableValues(GeneratorSequenceParamEnum tableName, Order order, double... values) {

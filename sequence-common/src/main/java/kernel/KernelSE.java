@@ -920,6 +920,8 @@ public abstract class KernelSE extends SeqPrep {
             notifyOutOfRangeParam(GRADIENT_RISE_TIME, new_grad_rise_time, ((NumberParam) getParam(GRADIENT_RISE_TIME)).getMaxValue(), "Gradient ramp time too short because of blanking delay ");
             grad_rise_time = new_grad_rise_time;
         }
+        grad_rise_time = ceilToGRT(grad_rise_time);
+
         set(Time_grad_ramp, grad_rise_time);
         getParam(GRADIENT_RISE_TIME).setValue(grad_rise_time);
     }
