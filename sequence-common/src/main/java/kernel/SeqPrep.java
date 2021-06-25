@@ -9,13 +9,10 @@ import rs2d.spinlab.tools.utility.GradientAxe;
 import rs2d.spinlab.tools.utility.Nucleus;
 
 import static java.util.Arrays.asList;
+import java.util.Collections;
 
 import common.*;
 import model.*;
-
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.Map;
 
 import static common.CommonUP.*;
 import static common.CommonSP.*;

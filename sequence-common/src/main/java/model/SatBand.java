@@ -235,11 +235,12 @@ public class SatBand implements ModelInterface {
         gradAmpSBPhaseSpoilerTable = new double[nb_satband];
         gradAmpSBReadSpoilerTable = new double[nb_satband];
 
-        if (!(isTofBandEnabled && !parent.isMultiplanar))
-            prepGradTable();
-        else {
-            offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
-        }
+//        if (!(isTofBandEnabled && !parent.isMultiplanar))
+//            prepGradTable();
+//        else {
+//            offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+//        }
+        prepGradTable();
 
         // Apply values ot Gradient
         gradSatBandSlice.setAmplitude(gradAmpSBSliceTable);
@@ -373,32 +374,37 @@ public class SatBand implements ModelInterface {
                 n += 1;
             }
         } else if (isTofBandEnabled) {
-            double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
-            double off_center_slice_pos = satband_distance_from_slice + satband_thickness / 2.0; // sat band cranial from voxel
-            double off_center_slice_neg = -off_center_slice_pos;  // caudal
-            double off_center_slice = 0;
-            if ("BELOW THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
-                off_center_slice = off_center_slice_neg;
-            } else if ("ABOVE THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
-                off_center_slice = off_center_slice_pos;
-            }
-            double frequency_offset_sat_slice = -grad_amp_satband_mTpm * off_center_slice * (GradientMath.GAMMA / parent.nucleus.getRatio());
+            if (parent.isMultiplanar) {
+                double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
+                double off_center_slice_pos = satband_distance_from_slice + satband_thickness / 2.0; // sat band cranial from voxel
+                double off_center_slice_neg = -off_center_slice_pos;  // caudal
+                double off_center_slice = 0;
+                if ("BELOW THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
+                    off_center_slice = off_center_slice_neg;
+                } else if ("ABOVE THE SLICE".equalsIgnoreCase(parent.getText(TofSat.UP.TOF2D_SB_POSITION))) {
+                    off_center_slice = off_center_slice_pos;
+                }
+                double frequency_offset_sat_slice = -grad_amp_satband_mTpm * off_center_slice * (GradientMath.GAMMA / parent.nucleus.getRatio());
 
-            for (int k = 0; k < parent.nb_planar_excitation; k++) {
-                if (parent.pulseTX != null && parent.gradSlice != null)
-                    offsetFreqSBTable[k] = (parent.pulseTX.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
+                for (int k = 0; k < parent.nb_planar_excitation; k++) {
+                    if (parent.pulseTX != null && parent.gradSlice != null)
+                        offsetFreqSBTable[k] = (parent.pulseTX.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
 //                else if (parent.pulseTX90 != null && parent.gradSlice90 != null)
 //                    offsetFreqSBTable[k] = (parent.pulseTX90.getFrequencyOffset(k) * grad_amp_satband_mTpm / parent.gradSlice.getAmplitude_mTpm()) + frequency_offset_sat_slice;
-                else
-                    Log.error(getClass(), "RFPulse or Gradient Object pulseTX/pulseTX90 and gradSlice/gradSlice90 do not exist");
+                    else
+                        Log.error(getClass(), "RFPulse or Gradient Object pulseTX/pulseTX90 and gradSlice/gradSlice90 do not exist");
 
-                if (parent.hasParam(TofSat.UP.TOF2D_SB_OFFSET))
-                    offsetFreqSBTable[k] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+                    if (parent.hasParam(TofSat.UP.TOF2D_SB_OFFSET))
+                        offsetFreqSBTable[k] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+                }
+
+                gradAmpSBSliceTable[0] = grad_amp_satband;
+                gradAmpSBPhaseTable[0] = 0;
+                gradAmpSBReadTable[0] = 0;
+            } else {
+                offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
             }
 
-            gradAmpSBSliceTable[0] = grad_amp_satband;
-            gradAmpSBPhaseTable[0] = 0;
-            gradAmpSBReadTable[0] = 0;
             gradAmpSBSliceSpoilerTable[0] = 0;
             gradAmpSBPhaseSpoilerTable[0] = grad_amp_sat_spoiler;
             gradAmpSBReadSpoilerTable[0] = grad_amp_sat_spoiler;

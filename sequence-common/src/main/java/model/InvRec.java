@@ -91,7 +91,6 @@ public class InvRec implements ModelInterface {
             inversionRecoveryTime.add(tmp);
             nb_inversionRecovery = 1;
         }
-        System.out.println("xxx isInvRecEnabled "+isInvRecEnabled);
         parent.set(SP.Grad_enable_IR, isInvRecEnabled);
         parent.set(SP.Tx_enable_IR, isInvRecEnabled);
         parent.set(SP.Grad_enable_crush_IR, isInvRecEnabled && parent.getBoolean(UP.GRADIENT_ENABLE_CRUSHER_IR));

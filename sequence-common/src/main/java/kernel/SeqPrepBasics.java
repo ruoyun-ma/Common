@@ -1,5 +1,6 @@
 package kernel;
 
+import org.w3c.dom.ls.LSOutput;
 import rs2d.commons.log.Log;
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
 import rs2d.spinlab.sequence.table.Table;
@@ -55,8 +56,9 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public final static int loopIndice_memory = 2048;
     public final static double defaultInstructionDelay = 0.000010;     // single instruction minimal duration
     public final static double minInstructionDelay = 0.000005;     // single instruction minimal duration
-    public final static double mingradientRasterTime = 5.213090909E-6;
-    public final static double gradientRasterTime = 57.344E-6; //11 * mingradientRasterTime;
+    public final static double clockSpeed = 78.125E6;
+    public final static double mingradientRasterTime = 35 * 128 / 11 / clockSpeed;//5.213090909E-6
+    public final static double gradientRasterTime = 35 * 128 / clockSpeed;//mingradientRasterTime * 11 // 57.344E-6;
 
     // Hardware
     public double blankingDelay;

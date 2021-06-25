@@ -170,6 +170,7 @@ public abstract class KernelSE extends SeqPrep {
 
         is_FSE_vs_MultiEcho = ("FSE".equalsIgnoreCase((String) (getParam(SE_TYPE).getValue())));
         nb_echo_4D = !is_FSE_vs_MultiEcho ? echoTrainLength : 1; // didn't support vfl mode
+        echoEffective = getInt(ECHO_EFFECTIVE);
 
         isDynamic = getBoolean(DYNAMIC_SEQUENCE);
         nb_dynamic_acquisition = isDynamic ? getInt(DYN_NUMBER_OF_ACQUISITION) : 1;
@@ -616,6 +617,9 @@ public abstract class KernelSE extends SeqPrep {
     @Override
     protected void getROGrad() throws Exception {
         double grad_crusher_read_time = getDouble(GRADIENT_CRUSHER_READ_TOP_TIME);
+        //XG
+        grad_crusher_read_time = (ceilToGRT(grad_crusher_read_time * 2 + getSequenceTable(Time_rx).get(0).doubleValue()) - getSequenceTable(Time_rx).get(0).doubleValue()) / 2;
+        getParam(GRADIENT_CRUSHER_READ_TOP_TIME).setValue(grad_crusher_read_time);
         set(Time_grad_read_crusher, grad_crusher_read_time);
 
         gradReadout = Gradient5Event.createGradient(getSequence(), Grad_amp_read_read, Time_grad_read_crusher, Time_rx, Time_grad_read_crusher, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
@@ -679,9 +683,13 @@ public abstract class KernelSE extends SeqPrep {
         double tmp_StaticArea = getDouble(PREPHASING_READ_GRADIENT_RATIO) * gradReadout.getStaticArea();
         grad_read_prep_application_time = tmp_StaticArea / gradReadout.getAmplitude() - grad_shape_rise_time;
 
+        //XG
+        if (roundToGRT(grad_read_prep_application_time) != grad_read_prep_application_time)
+            grad_read_prep_application_time = roundToGRT(grad_read_prep_application_time);
+
         getParam(GRADIENT_READ_PREPHASING_APPLICATION_TIME).setValue(grad_read_prep_application_time);
         set(Time_grad_read_prep_top, grad_read_prep_application_time);
-        set(Grad_amp_read_prep, gradReadout.getAmplitude());
+        set(Grad_amp_read_prep, tmp_StaticArea / (grad_read_prep_application_time + grad_shape_rise_time));
 
         // pre-calculate READ_prephasing max area
         Gradient gradReadPrep = Gradient.createGradient(getSequence(), Grad_amp_read_prep, Time_grad_read_prep_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
