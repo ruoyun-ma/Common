@@ -285,10 +285,6 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         }
     }
 
-    public int floorEven(double value) {
-        return (int) Math.floor(Math.round(value) / 2.0) * 2;
-    }
-
     public void setSquarePixel(boolean square, int dim) {
         if (square) {
             switch (dim) {
@@ -562,6 +558,22 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
 
     public static double ceilToGRT(double numberToBeRounded) {
         return Math.ceil(numberToBeRounded / gradientRasterTime) * gradientRasterTime;
+    }
+
+    public static double roundEvenToGRT(double numberToBeRounded) {
+        return ceilEven(Math.round(numberToBeRounded / gradientRasterTime)) * gradientRasterTime;
+    }
+
+    public static double ceilEvenToGRT(double numberToBeRounded) {
+        return ceilEven(Math.ceil(numberToBeRounded / gradientRasterTime)) * gradientRasterTime;
+    }
+
+    public static int floorEven(double value) {
+        return (int) Math.floor(Math.round(value) / 2.0) * 2;
+    }
+
+    public static int ceilEven(double value) {
+        return (int) Math.ceil(Math.round(value) / 2.0) * 2;
     }
 
     public Table setSequenceTableValues(GeneratorSequenceParamEnum tableName, Order order, double... values) {

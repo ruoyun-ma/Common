@@ -93,6 +93,7 @@ public abstract class KernelSE extends SeqPrep {
         GRADIENT_CRUSHER_END_TOP_TIME,
         GRADIENT_AMP_SPOILER,
         GRADIENT_CRUSHER_READ_TOP_TIME,
+        GRADIENT_AREA_SPOILER_PI,
         ECHO_EFFECTIVE,
         SE_TYPE,
 
@@ -165,8 +166,10 @@ public abstract class KernelSE extends SeqPrep {
         super.initUserParam();
         getParam(SEQUENCE_VERSION).setValue(sequenceVersion);
 
-        txLength90 = getDouble(TX_LENGTH_90);
-        txLength180 = getDouble(TX_LENGTH_180);
+        txLength90 = roundEvenToGRT(getDouble(TX_LENGTH_90));
+        getParam(TX_LENGTH_90).setValue(txLength90);
+        txLength180 = roundEvenToGRT(getDouble(TX_LENGTH_180));
+        getParam(TX_LENGTH_180).setValue(txLength180);
 
         is_FSE_vs_MultiEcho = ("FSE".equalsIgnoreCase((String) (getParam(SE_TYPE).getValue())));
         nb_echo_4D = !is_FSE_vs_MultiEcho ? echoTrainLength : 1; // didn't support vfl mode
@@ -185,6 +188,10 @@ public abstract class KernelSE extends SeqPrep {
         getParam(TOOL_FSE_TRAIN_1D).setValue(isFSETrain1D);
         isEnablePhase3D = !isKSCenterMode && !isFSETrain1D && isEnablePhase3D;
         isEnablePhase = !isKSCenterMode && !isFSETrain1D && isEnablePhase;
+
+        getParam(GRADIENT_PHASE_APPLICATION_TIME).setValue(roundToGRT(getDouble(GRADIENT_PHASE_APPLICATION_TIME)));
+        getParam(GRADIENT_CRUSHER_TOP_TIME).setValue(roundToGRT(getDouble(GRADIENT_CRUSHER_TOP_TIME)));
+        getParam(GRADIENT_CRUSHER_END_TOP_TIME).setValue(roundToGRT(getDouble(GRADIENT_CRUSHER_END_TOP_TIME)));
     }
 
     //--------------------------------------------------------------------------------------
@@ -529,7 +536,7 @@ public abstract class KernelSE extends SeqPrep {
         // -----------------------------------------------
         // 2nd D managment  ETL  //TODO:XG:Optimize the logic flow
         // -----------------------------------------------
-        if (is_FSE_vs_MultiEcho) {
+        if (is_FSE_vs_MultiEcho && isMultiplanar) {
             echoTrainLength = getInferiorDivisorToGetModulusZero(echoTrainLength, acqMatrixDimension2D / 2);
             getParam(ECHO_TRAIN_LENGTH).setValue(echoTrainLength);
             nb_scan_2d = Math.floorDiv(acqMatrixDimension2D, echoTrainLength);
@@ -798,6 +805,14 @@ public abstract class KernelSE extends SeqPrep {
         // -------------------------------------------------------------------------------------------------
         // Spoiler Gradient
         // -------------------------------------------------------------------------------------------------
+        double grad_amp_crusher = 0.0;
+        double grad_area_crusher = 0.0;
+        if (hasParam(GRADIENT_AREA_SPOILER_PI)) {
+            grad_area_crusher = getDouble(GRADIENT_AREA_SPOILER_PI) / ((GradientMath.GAMMA) * sliceThickness);
+            grad_amp_crusher = grad_area_crusher / (grad_shape_rise_time + getDouble(GRADIENT_CRUSHER_END_TOP_TIME)) / gMax * 100.0;
+            getParam(GRADIENT_AMP_SPOILER).setValue(grad_amp_crusher);
+        }
+
         set(Time_grad_spoiler_top, GRADIENT_CRUSHER_END_TOP_TIME);
 
         Gradient gradSliceSpoiler = Gradient.createGradient(getSequence(), Grad_amp_spoiler_slice, Time_grad_spoiler_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
