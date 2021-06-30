@@ -166,11 +166,6 @@ public abstract class KernelSE extends SeqPrep {
         super.initUserParam();
         getParam(SEQUENCE_VERSION).setValue(sequenceVersion);
 
-        txLength90 = roundEvenToGRT(getDouble(TX_LENGTH_90));
-        getParam(TX_LENGTH_90).setValue(txLength90);
-        txLength180 = roundEvenToGRT(getDouble(TX_LENGTH_180));
-        getParam(TX_LENGTH_180).setValue(txLength180);
-
         is_FSE_vs_MultiEcho = ("FSE".equalsIgnoreCase((String) (getParam(SE_TYPE).getValue())));
         nb_echo_4D = !is_FSE_vs_MultiEcho ? echoTrainLength : 1; // didn't support vfl mode
         echoEffective = getInt(ECHO_EFFECTIVE);
@@ -189,9 +184,20 @@ public abstract class KernelSE extends SeqPrep {
         isEnablePhase3D = !isKSCenterMode && !isFSETrain1D && isEnablePhase3D;
         isEnablePhase = !isKSCenterMode && !isFSETrain1D && isEnablePhase;
 
+        getParam(TX_LENGTH_90).setValue(roundEvenToGRT(getDouble(TX_LENGTH_90)));
+        getParam(TX_LENGTH_180).setValue(roundEvenToGRT(getDouble(TX_LENGTH_180)));
         getParam(GRADIENT_PHASE_APPLICATION_TIME).setValue(roundToGRT(getDouble(GRADIENT_PHASE_APPLICATION_TIME)));
+        getParam(GRADIENT_READ_PREPHASING_APPLICATION_TIME).setValue(roundToGRT(getDouble(GRADIENT_READ_PREPHASING_APPLICATION_TIME)));
         getParam(GRADIENT_CRUSHER_TOP_TIME).setValue(roundToGRT(getDouble(GRADIENT_CRUSHER_TOP_TIME)));
         getParam(GRADIENT_CRUSHER_END_TOP_TIME).setValue(roundToGRT(getDouble(GRADIENT_CRUSHER_END_TOP_TIME)));
+        getParam(GRADIENT_RISE_TIME).setValue(roundToGRT(getDouble(GRADIENT_RISE_TIME)));
+        getParam(ECHO_SPACING).setValue(ceilEvenToGRT(getDouble(ECHO_SPACING)));
+        getParam(GRADIENT_CRUSHER_READ_TOP_TIME).setValue((ceilEvenToGRT(2 * getDouble(GRADIENT_CRUSHER_READ_TOP_TIME) + getDouble(ACQUISITION_TIME_PER_SCAN)) - getDouble(ACQUISITION_TIME_PER_SCAN)) / 2);
+
+        txLength90 = getDouble(TX_LENGTH_90);
+        txLength180 = getDouble(TX_LENGTH_180);
+        echo_spacing = getDouble(ECHO_SPACING);
+        grad_rise_time = getDouble(GRADIENT_RISE_TIME);
     }
 
     //--------------------------------------------------------------------------------------
@@ -624,8 +630,6 @@ public abstract class KernelSE extends SeqPrep {
     @Override
     protected void getROGrad() throws Exception {
         double grad_crusher_read_time = getDouble(GRADIENT_CRUSHER_READ_TOP_TIME);
-        //XG
-        grad_crusher_read_time = (ceilToGRT(grad_crusher_read_time * 2 + getSequenceTable(Time_rx).get(0).doubleValue()) - getSequenceTable(Time_rx).get(0).doubleValue()) / 2;
         getParam(GRADIENT_CRUSHER_READ_TOP_TIME).setValue(grad_crusher_read_time);
         set(Time_grad_read_crusher, grad_crusher_read_time);
 
@@ -684,19 +688,24 @@ public abstract class KernelSE extends SeqPrep {
 
         double grad_read_prep_application_time;
         double grad_read_prep_offset = getDouble(GRADIENT_READ_OFFSET);
-        //set(Time_grad_read_prep_top, grad_read_prep_application_time);
 
-        // calc grad_read_prep_application_time by hand  TODO: Merge into Gradient.class
-        double tmp_StaticArea = getDouble(PREPHASING_READ_GRADIENT_RATIO) * gradReadout.getStaticArea();
-        grad_read_prep_application_time = tmp_StaticArea / gradReadout.getAmplitude() - grad_shape_rise_time;
+        if (false) {
+            // calc grad_read_prep_application_time by hand  TODO: Merge into Gradient.class
+            double tmp_StaticArea = getDouble(PREPHASING_READ_GRADIENT_RATIO) * gradReadout.getStaticArea();
+            grad_read_prep_application_time = tmp_StaticArea / gradReadout.getAmplitude() - grad_shape_rise_time;
 
-        //XG
-        if (roundToGRT(grad_read_prep_application_time) != grad_read_prep_application_time)
-            grad_read_prep_application_time = roundToGRT(grad_read_prep_application_time);
+            //XG
+            if (roundToGRT(grad_read_prep_application_time) != grad_read_prep_application_time)
+                grad_read_prep_application_time = roundToGRT(grad_read_prep_application_time);
 
-        getParam(GRADIENT_READ_PREPHASING_APPLICATION_TIME).setValue(grad_read_prep_application_time);
-        set(Time_grad_read_prep_top, grad_read_prep_application_time);
-        set(Grad_amp_read_prep, tmp_StaticArea / (grad_read_prep_application_time + grad_shape_rise_time));
+            getParam(GRADIENT_READ_PREPHASING_APPLICATION_TIME).setValue(grad_read_prep_application_time);
+            set(Time_grad_read_prep_top, grad_read_prep_application_time);
+            set(Grad_amp_read_prep, tmp_StaticArea / (grad_read_prep_application_time + grad_shape_rise_time));
+        } else {
+            grad_read_prep_application_time = getDouble(GRADIENT_READ_PREPHASING_APPLICATION_TIME);
+            grad_read_prep_offset = getDouble(GRADIENT_READ_OFFSET);
+            set(Time_grad_read_prep_top, grad_read_prep_application_time);
+        }
 
         // pre-calculate READ_prephasing max area
         Gradient gradReadPrep = Gradient.createGradient(getSequence(), Grad_amp_read_prep, Time_grad_read_prep_top, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
