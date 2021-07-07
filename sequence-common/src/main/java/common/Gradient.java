@@ -890,6 +890,22 @@ public class Gradient {
         steps = new_steps;
     }
 
+    public void reoderPhaseEncodingForSEEPI(int echoTrainLength, boolean bDIR) {
+        if (bDIR)
+            reoderPhaseEncodingForSEEPI(echoTrainLength);
+        else {
+            int new_steps = steps / echoTrainLength;
+            double[] newTable = new double[new_steps];
+            int fact = 1;
+            for (int i = 0; i < new_steps; i++) {
+                int ii = i * fact;
+                newTable[i] = amplitudeArray[steps-ii-1];
+            }
+            amplitudeArray = newTable;
+            steps = new_steps;
+        }
+    }
+
     // for internal dummy scans, add nbDummy scan before the scans
     public void reoderPhaseEncodingForSEEPIplusDummy(int nbDummy) {
         int new_steps = steps + nbDummy;

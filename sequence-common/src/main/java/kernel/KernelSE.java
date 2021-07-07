@@ -553,6 +553,7 @@ public abstract class KernelSE extends SeqPrep {
         }
         userMatrixDimension2D = Math.max(userMatrixDimension2D, acqMatrixDimension2D);
         getParam(USER_MATRIX_DIMENSION_2D).setValue(userMatrixDimension2D);
+        getParam(ACQUISITION_MATRIX_DIMENSION_2D).setValue(acqMatrixDimension2D);
     }
 
     @Override
