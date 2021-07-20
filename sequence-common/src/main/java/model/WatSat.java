@@ -9,6 +9,8 @@ import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.table.Order;
 
+import java.util.Arrays;
+
 import static common.CommonUP.*;
 import static common.CommonSP.*;
 
@@ -38,6 +40,8 @@ public class WatSat implements ModelInterface {
         WATSAT_BANDWIDTH,
         WATSAT_SP_FACTOR,
         WATSAT_FLIP_ANGLE,
+        WATSAT_OFFSET_FREQ,
+        WATSAT_GAMMA_B1,
         WATSAT_SATWAT,
         WATSAT_DELAY,
         ;
@@ -85,33 +89,24 @@ public class WatSat implements ModelInterface {
     @Override
     public void initFinal() throws Exception {
         parent.set(SP.Enable_ws, isWatSatEnabled);
-        if (isWatSatEnabled) {
-            nb_watsat = 3; // TODO: make it a bit flexible one day
-        } else {
-            nb_watsat = 1;
-        }
-        flipAngle = new double[nb_watsat];
-
-        if (parent.hasParam(UP.WATSAT_FLIP_ANGLE)) {
-            if (parent.getListDouble(UP.WATSAT_FLIP_ANGLE).size() == 3) {
-                if (isWatSatEnabled) {
-                    flipAngle = parent.getListDouble(UP.WATSAT_FLIP_ANGLE).stream().mapToDouble(d -> d).toArray();
-                } else {
-                    flipAngle[0] = 0.0;
-                }
-            } else {
-                Log.error(getClass(), "UserParam WATSAT_FLIP_ANGLE has to be a list of three values");
-            }
-        } else {
-            if (isWatSatEnabled) {
-                flipAngle[0] = 85.0;
-                flipAngle[1] = 110.0;
-                flipAngle[2] = 130.0;
-            } else
-                flipAngle[0] = 0.0;
-        }
-
         setSeqParamTime();
+
+        if (isWatSatEnabled)
+            nb_watsat = parent.getListInt(UP.WATSAT_FLIP_ANGLE).size();
+        else
+            nb_watsat = 1;
+
+        flipAngle = new double[nb_watsat];
+        if (false) {
+            if (isWatSatEnabled)
+                flipAngle = parent.getListDouble(UP.WATSAT_FLIP_ANGLE).stream().mapToDouble(d -> d).toArray();
+            else
+                flipAngle[0] = 0.0;
+        } else {
+            flipAngle[0] = 360.0 * parent.getDouble(UP.WATSAT_TX_LENGTH) * parent.getDouble(UP.WATSAT_GAMMA_B1);
+            parent.getParam(UP.WATSAT_FLIP_ANGLE).setValue(flipAngle[0]);
+        }
+
         initPulseandGrad();
     }
 
@@ -237,7 +232,7 @@ public class WatSat implements ModelInterface {
 
     protected double getFlipAngle() {
         if (flipAngle.length > 1)
-            return Math.max(Math.max(flipAngle[0], flipAngle[1]), flipAngle[2]);
+            return Arrays.stream(flipAngle).max().getAsDouble();
         else
             return flipAngle[0];
     }
@@ -251,8 +246,8 @@ public class WatSat implements ModelInterface {
                 case "LIPID":
                     return parent.observeFrequency + parent.getDouble(FatSat.UP.FATSAT_OFFSET_FREQ);
 
-                case "WATER&LIPID":
-                    return parent.observeFrequency + parent.getDouble(FatSat.UP.FATSAT_OFFSET_FREQ) / 2;
+                case "FREE":
+                    return parent.observeFrequency + parent.getDouble(UP.WATSAT_OFFSET_FREQ);
 
                 default:
                     return parent.observeFrequency + parent.getDouble(FatSat.UP.FATSAT_OFFSET_FREQ) / 2;

@@ -133,10 +133,10 @@ public class SatBand implements ModelInterface {
         if (parent.hasParam(UP.SATBAND_ENABLED)) {
             parent.getParam(UP.SATBAND_ENABLED).setValue(isSatBandEnabled);
         }
-        if (parent.hasParam(TofSat.UP.TOF2D_ENABLED)) {
-            parent.getParam(TofSat.UP.TOF2D_ENABLED).setValue(isTofBandEnabled);
-            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
-                parent.getParam(TofSat.UP.TOF2D_SB_TX_SHAPE).setValue("GAUSSIAN");
+        if (parent.hasParam(TofSat.UP.TOF_ENABLED)) {
+            parent.getParam(TofSat.UP.TOF_ENABLED).setValue(isTofBandEnabled);
+            if (isTofBandEnabled && !parent.isMultiplanar) {
+                parent.getParam(TofSat.UP.TOF_SB_TX_SHAPE).setValue("GAUSSIAN");
             }
         }
 
@@ -207,7 +207,7 @@ public class SatBand implements ModelInterface {
         pulseTXSatBand.setShape(parent.getText(UP.SATBAND_TX_SHAPE), parent.nb_shape_points, "90 degree");
 
         if (isTofBandEnabled) { //TODO: better merge TOF2D_SB_TX_SHAPE with SATBAND_TX_SHAPE one day
-            pulseTXSatBand.setShape(parent.getText(TofSat.UP.TOF2D_SB_TX_SHAPE), parent.nb_shape_points, "90 degree");
+            pulseTXSatBand.setShape(parent.getText(TofSat.UP.TOF_SB_TX_SHAPE), parent.nb_shape_points, "90 degree");
         }
 
         gradSatBandSlice = Gradient.createGradient(parent.getSequence(), SP.Grad_amp_sb_slice, SP.Time_tx_sb, SP.Grad_shape_rise_up, SP.Grad_shape_rise_down, SP.Time_grad_ramp_sb, parent.nucleus);
@@ -235,11 +235,6 @@ public class SatBand implements ModelInterface {
         gradAmpSBPhaseSpoilerTable = new double[nb_satband];
         gradAmpSBReadSpoilerTable = new double[nb_satband];
 
-//        if (!(isTofBandEnabled && !parent.isMultiplanar))
-//            prepGradTable();
-//        else {
-//            offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
-//        }
         prepGradTable();
 
         // Apply values ot Gradient
@@ -281,7 +276,7 @@ public class SatBand implements ModelInterface {
             grad_amp_sat_spoiler = parent.getDouble(UP.SATBAND_GRAD_AMP_SPOILER);
             satband_thickness = parent.getDouble(UP.SATBAND_THICKNESS);
         } else if (isTofBandEnabled) {
-            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF2D_SB_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
+            tx_bandwidth_factor_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF_SB_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
             grad_amp_sat_spoiler = parent.getDouble(TofSat.UP.TOF2D_SB_GRAMP_SP);
             satband_thickness = parent.getDouble(TofSat.UP.TOF2D_SB_THICKNESS);
         }
@@ -374,7 +369,7 @@ public class SatBand implements ModelInterface {
                 n += 1;
             }
         } else if (isTofBandEnabled) {
-            if (parent.isMultiplanar) {
+            if (parent.isMultiplanar && !parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
                 double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
                 double off_center_slice_pos = satband_distance_from_slice + satband_thickness / 2.0; // sat band cranial from voxel
                 double off_center_slice_neg = -off_center_slice_pos;  // caudal
@@ -394,15 +389,15 @@ public class SatBand implements ModelInterface {
                     else
                         Log.error(getClass(), "RFPulse or Gradient Object pulseTX/pulseTX90 and gradSlice/gradSlice90 do not exist");
 
-                    if (parent.hasParam(TofSat.UP.TOF2D_SB_OFFSET))
-                        offsetFreqSBTable[k] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+                    if (parent.hasParam(TofSat.UP.TOF_SB_OFFSET))
+                        offsetFreqSBTable[k] += parent.getDouble(TofSat.UP.TOF_SB_OFFSET);
                 }
 
                 gradAmpSBSliceTable[0] = grad_amp_satband;
                 gradAmpSBPhaseTable[0] = 0;
                 gradAmpSBReadTable[0] = 0;
             } else {
-                offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF2D_SB_OFFSET);
+                offsetFreqSBTable[0] += parent.getDouble(TofSat.UP.TOF_SB_OFFSET);
             }
 
             gradAmpSBSliceSpoilerTable[0] = 0;
@@ -441,10 +436,15 @@ public class SatBand implements ModelInterface {
             } else {
                 Log.error(getClass(), "User Param TX_LENGTH_90 or TX_LENGTH does not exist");
             }
-            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
+            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE) && parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) > 0.01F) {
-                    if (parent.hasParam(TofSat.UP.TOF3D_MT_TX_LENGTH) && parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH) > parent.minInstructionDelay) {
-                        parent.set(SP.Time_tx_sb, parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH));
+                    if (parent.hasParam(TofSat.UP.TOF3D_MT_TX_LENGTH)) {
+                        double tx_bandwidth_90_sb = parent.getDouble(TofSat.UP.TOF3D_MT_BANDWIDTH);
+                        double tx_bandwidth_factor_90_sb = parent.getTx_bandwidth_factor(TofSat.UP.TOF_SB_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
+                        double tx_length_90_sb = tx_bandwidth_factor_90_sb / tx_bandwidth_90_sb;
+
+                        parent.set(SP.Time_tx_sb, tx_length_90_sb);
+                        parent.getParam(TofSat.UP.TOF3D_MT_TX_LENGTH).setValue(tx_length_90_sb);
                     } else {
                         double factor = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) / parent.getDouble(FLIP_ANGLE);
                         parent.set(SP.Time_tx_sb, factor * parent.getSequenceTable(SP.Time_tx_sb).get(0).doubleValue());
@@ -510,9 +510,11 @@ public class SatBand implements ModelInterface {
             double flip_90_sat_degree = Math.toDegrees((isTofBandEnabled ? 1.5 : 1) * flip_90_sat);
             flip_angle_satband = pulseTXSatBand.isSlr() ? 90 : flip_90_sat_degree;  //ha slr,akkor legyen 90,különben szar a szeletprofil!
 
-            if (isTofBandEnabled && !parent.getBoolean(MULTI_PLANAR_EXCITATION)) {
+            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE)) {
-                    flip_angle_satband = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE);
+                    //flip_angle_satband = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE);
+                    flip_angle_satband = 360.0 * parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH) * parent.getDouble(TofSat.UP.TOF3D_MT_GAMMA_B1);
+                    parent.getParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE).setValue(flip_angle_satband);
                 }
             }
         }

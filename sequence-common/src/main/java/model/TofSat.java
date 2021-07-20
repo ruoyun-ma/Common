@@ -22,20 +22,24 @@ import static common.CommonSP.*;
 public class TofSat extends SatBand {
 
     protected enum UP implements GeneratorParamEnum {
-        TOF2D_ENABLED,
+        TOF_ENABLED,
+        TOF_SB_TX_SHAPE,
+        TOF_SB_OFFSET,
         TOF2D_SB_THICKNESS,
-        TOF2D_SB_TX_SHAPE,
         TOF2D_SB_GRAMP_SP,
         TOF2D_SB_DISTANCE_FROM_SLICE,
         TOF2D_SB_POSITION,
-        TOF2D_SB_OFFSET,
+        TOF3D_MT_GAMMA_B1,
+        TOF3D_MT_BANDWIDTH,
         TOF3D_MT_FLIP_ANGLE,
-        TOF3D_TX_RAMP_SLOPE,
-        TOF3D_MOTSA_OVERLAP,
-        TOF3D_EXT_SHIRNK_FACTOR,
         TOF3D_MT_TX_LENGTH,
+        TOF3D_MT_INDIV,
+        TOF3D_TX_RAMP_SLOPE,
+        TOF3D_EXT_SHIRNK_FACTOR,
         TOF2D_FLOW_VELOCITY,
         TOF2D_FLOW_TAU,
+
+        TOF2D_MT_Cali,
         ;
 
         @Override
@@ -65,7 +69,7 @@ public class TofSat extends SatBand {
         super.initPre();
 
         //isTofBandEnabled = parent.getBoolean(MULTI_PLANAR_EXCITATION) && parent.getBoolean(UP.TOF2D_ENABLED); // TOF not allowed in 3D
-        isTofBandEnabled = parent.getBoolean(UP.TOF2D_ENABLED); //XG: now we do support 3D
+        isTofBandEnabled = parent.getBoolean(UP.TOF_ENABLED); //XG: now we do support 3D
 
         if (isTofBandEnabled) { //TofBandEnabled has a higher priority than SatBandEnabled
             isSatBandEnabled = false;

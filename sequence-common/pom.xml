@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>rs2d-sequence</groupId>
     <artifactId>sequence-common</artifactId>
-	<version>2.4-spinlab${spinlab.version}</version>
+	<version>2.5-spinlab${spinlab.version}</version>
 
     <properties>
         <spinlab.version>2021.01-NEXT</spinlab.version>
