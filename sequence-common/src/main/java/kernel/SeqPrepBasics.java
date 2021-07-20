@@ -316,12 +316,12 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(2);
             } else if ("SINC5".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(3);
-            } else if ("RAMP".equalsIgnoreCase(tx_shape_name)) {
-                tx_bandwidth_factor = tx_bandwith_factor_table.get(3);
             } else if ("SLR_8_5152".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(4);
             } else if ("SLR_4_2576".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(5);
+            } else if ("RAMP".equalsIgnoreCase(tx_shape_name)) {
+                tx_bandwidth_factor = tx_bandwith_factor_table.get(6);
             } else {
                 tx_bandwidth_factor = tx_bandwith_factor_table.get(0);
             }
@@ -332,12 +332,12 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
                 tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(2);
             } else if ("SINC5".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(3);
-            } else if ("RAMP".equalsIgnoreCase(tx_shape_name)) {
-                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(3);
             } else if ("SLR_8_5152".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(4);
             } else if ("SLR_4_2576".equalsIgnoreCase(tx_shape_name)) {
                 tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(5);
+            } else if ("RAMP".equalsIgnoreCase(tx_shape_name)) {
+                tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(6);
             } else {
                 tx_bandwidth_factor = tx_bandwith_factor_3D_table.get(0);
             }
