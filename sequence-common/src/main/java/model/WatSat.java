@@ -103,7 +103,7 @@ public class WatSat implements ModelInterface {
             else
                 flipAngle[0] = 0.0;
         } else {
-            if (isWatSatEnabled) {
+            flipAngle[0] = 360.0 * parent.getDouble(UP.WATSAT_TX_LENGTH) * parent.getDouble(UP.WATSAT_GAMMA_B1);
                 flipAngle[0] = 360.0 * parent.getDouble(UP.WATSAT_TX_LENGTH) * parent.getDouble(UP.WATSAT_GAMMA_B1);
                 parent.getParam(UP.WATSAT_FLIP_ANGLE).setValue(flipAngle[0]);
             } else
