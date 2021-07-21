@@ -9,6 +9,7 @@ import rs2d.spinlab.tools.param.NumberParam;
 import rs2d.spinlab.tools.param.Param;
 import rs2d.spinlab.tools.table.Order;
 
+import java.util.ArrayList;
 import java.util.Arrays;
 
 import static common.CommonUP.*;
@@ -38,7 +39,7 @@ public class WatSat implements ModelInterface {
         WATSAT_TX_SHAPE,
         WATSAT_TX_LENGTH,
         WATSAT_BANDWIDTH,
-        WATSAT_SP_FACTOR,
+        WATSAT_SPOILER_PI,
         WATSAT_FLIP_ANGLE,
         WATSAT_OFFSET_FREQ,
         WATSAT_GAMMA_B1,
@@ -92,7 +93,7 @@ public class WatSat implements ModelInterface {
         setSeqParamTime();
 
         if (isWatSatEnabled)
-            nb_watsat = parent.getListInt(UP.WATSAT_FLIP_ANGLE).size();
+            nb_watsat = parent.getListInt(UP.WATSAT_GAMMA_B1).size();
         else
             nb_watsat = 1;
 
@@ -104,8 +105,12 @@ public class WatSat implements ModelInterface {
                 flipAngle[0] = 0.0;
         } else {
             if (isWatSatEnabled) {
-                flipAngle[0] = 360.0 * parent.getDouble(UP.WATSAT_TX_LENGTH) * parent.getDouble(UP.WATSAT_GAMMA_B1);
-                parent.getParam(UP.WATSAT_FLIP_ANGLE).setValue(flipAngle[0]);
+                ArrayList<Number> flipAngleArray = new ArrayList<>();
+                for (int i=0; i<parent.getListDouble(UP.WATSAT_GAMMA_B1).size();i++) {
+                    flipAngle[i]=360.0 * parent.getDouble(UP.WATSAT_TX_LENGTH) * parent.getListDouble(UP.WATSAT_GAMMA_B1).get(i);
+                    flipAngleArray.add(flipAngle[i]);
+                }
+                parent.getParam(UP.WATSAT_FLIP_ANGLE).setValue(flipAngleArray);
             } else
                 flipAngle[0] = 0.0;
         }
@@ -155,12 +160,14 @@ public class WatSat implements ModelInterface {
     }
 
     protected void setSeqParamTime() {
-        if (parent.hasParam(UP.WATSAT_DELAY))
-            parent.set(SP.Time_delay_ws, UP.WATSAT_DELAY);
-        else
+        if (parent.hasParam(UP.WATSAT_DELAY)) {
+            parent.set(SP.Time_delay_ws, Math.max(parent.minInstructionDelay, parent.getDouble(UP.WATSAT_DELAY)));
+            parent.getParam(UP.WATSAT_DELAY).setValue(parent.getSequenceTable(SP.Time_delay_ws).get(0)); //XG: update it if you need a table
+        } else
             parent.set(SP.Time_delay_ws, parent.minInstructionDelay);
 
-        double tx_bandwidth_90_ws = parent.getDouble(UP.WATSAT_BANDWIDTH);
+        double tx_bandwidth_90_ws = Math.min(1 / parent.minInstructionDelay, parent.getDouble(UP.WATSAT_BANDWIDTH));
+        parent.getParam(UP.WATSAT_BANDWIDTH).setValue(tx_bandwidth_90_ws);
         double tx_bandwidth_factor_90_ws = parent.getTx_bandwidth_factor(UP.WATSAT_TX_SHAPE, TX_BANDWIDTH_FACTOR, TX_BANDWIDTH_FACTOR_3D);
         double tx_length_90_ws = isWatSatEnabled ? tx_bandwidth_factor_90_ws / tx_bandwidth_90_ws : parent.minInstructionDelay;
 
@@ -184,24 +191,24 @@ public class WatSat implements ModelInterface {
         }
 
         if (isWatSatEnabled) {
-            if (parent.hasParam(UP.WATSAT_SP_FACTOR)) {
-                gradFatsatRead.setSpoiler(parent.getDouble(UP.WATSAT_SP_FACTOR), pixmax, 0, 0);
-                gradFatsatPhase.setSpoiler(parent.getDouble(UP.WATSAT_SP_FACTOR), 0, pixmax, 0);
-                gradFatsatSlice.setSpoiler(parent.getDouble(UP.WATSAT_SP_FACTOR), 0, 0, pixmax);
+            if (parent.hasParam(UP.WATSAT_SPOILER_PI)) {
+                gradFatsatSlice.setSpoiler(parent.getDouble(UP.WATSAT_SPOILER_PI), pixmax, 0, 0);
+                gradFatsatPhase.setSpoiler(parent.getDouble(UP.WATSAT_SPOILER_PI), 0, pixmax, 0);
+                gradFatsatRead.setSpoiler(parent.getDouble(UP.WATSAT_SPOILER_PI), 0, 0, pixmax);
             } else {
-                gradFatsatRead.setSpoiler(3.0, pixmax, 0, 0);
+                gradFatsatSlice.setSpoiler(3.0, pixmax, 0, 0);
                 gradFatsatPhase.setSpoiler(3.0, 0, pixmax, 0);
-                gradFatsatSlice.setSpoiler(3.0, 0, 0, pixmax);
+                gradFatsatRead.setSpoiler(3.0, 0, 0, pixmax);
             }
         } else {
-            gradFatsatRead.setSpoiler(0.0, pixmax, 0, 0);
+            gradFatsatSlice.setSpoiler(0.0, pixmax, 0, 0);
             gradFatsatPhase.setSpoiler(0.0, 0, pixmax, 0);
-            gradFatsatSlice.setSpoiler(0.0, 0, 0, pixmax);
+            gradFatsatRead.setSpoiler(0.0, 0, 0, pixmax);
         }
 
-        gradFatsatRead.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
-        gradFatsatPhase.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
         gradFatsatSlice.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
+        gradFatsatPhase.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
+        gradFatsatRead.applyAmplitude(isWatSatEnabled ? LoopOrder : Order.FourLoop);
     }
 
     protected void prepPulseComp() {
