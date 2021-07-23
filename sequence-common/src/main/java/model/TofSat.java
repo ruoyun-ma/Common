@@ -39,7 +39,7 @@ public class TofSat extends SatBand {
         TOF2D_FLOW_VELOCITY,
         TOF2D_FLOW_TAU,
 
-        TOF2D_MT_Cali,
+        TOF2D_MT_CALI,
         ;
 
         @Override

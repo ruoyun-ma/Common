@@ -946,6 +946,16 @@ public class Gradient {
         }
     }
 
+    public void reoderPhaseEncoding(int ...pos) {
+        double[] newTable = new double[pos.length];
+        for (int j = 0; j < pos.length; j++) {
+            newTable[j] = amplitudeArray[pos[j]];
+        }
+        amplitudeArray = newTable;
+        steps = pos.length;
+
+    }
+
     //    Extract traj ordering from traj list
     public void reoderPhaseEncoding(ArrayList<Integer> traj) {
         double[] newTable = new double[traj.size() / 2];

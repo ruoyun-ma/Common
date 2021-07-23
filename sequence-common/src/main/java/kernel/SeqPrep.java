@@ -9,6 +9,7 @@ import rs2d.spinlab.tools.utility.GradientAxe;
 import rs2d.spinlab.tools.utility.Nucleus;
 
 import static java.util.Arrays.asList;
+
 import java.util.Collections;
 
 import common.*;
@@ -79,7 +80,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
         nb_preScan = getInt(DUMMY_SCAN);
         nb_averages = getInt(NUMBER_OF_AVERAGES);
         nb_shoot_3d = getInt(NUMBER_OF_SHOOT_3D);
-        echoTrainLength = hasParam(ECHO_TRAIN_LENGTH)? getInt(ECHO_TRAIN_LENGTH) : 1;
+        echoTrainLength = hasParam(ECHO_TRAIN_LENGTH) ? getInt(ECHO_TRAIN_LENGTH) : 1;
 
         spectralWidth = getDouble(SPECTRAL_WIDTH);
         InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(TX_ROUTE).get(0));
@@ -179,10 +180,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
     protected void prepModels() throws Exception {
 
         for (ModelInterface eachModel : models) {
-            for (int icyc = 0; icyc < 2; icyc++) {
-                //cyc it 2 times in case of dependencies
-                eachModel.prep();
-            }
+            eachModel.prep();
             if (eachModel.getRfPulses() != null) {
                 rfPulses.add(eachModel.getRfPulses()); // We need rfPulses because pulses may be overwritten in rfPulsesTree
             }
@@ -322,20 +320,20 @@ public abstract class SeqPrep extends SeqPrepBasics {
             set(Gradient_axe_read, GradientAxe.R);
         }
 
-//        //XG:for 3D PE
-//        if (hasParam(SWITCH_READ_SLICE)) {
-//            boolean is_read_slice_inverted = getBoolean(SWITCH_READ_SLICE);
-//            if (is_read_slice_inverted) {
-//                set(Gradient_axe_slice, GradientAxe.R);
-//                set(Gradient_axe_read, GradientAxe.S);
-//                double off_center_distance_tmp = off_center_distance_3D;
-//                off_center_distance_3D = off_center_distance_1D;
-//                off_center_distance_1D = off_center_distance_tmp;
-//            } else {
-//                set(Gradient_axe_slice, GradientAxe.S);
-//                set(Gradient_axe_read, GradientAxe.R);
-//            }
-//        }
+        //XG:for 3D PE
+        if (hasParam(SWITCH_READ_SLICE) && !is_read_phase_inverted) {
+            boolean is_read_slice_inverted = getBoolean(SWITCH_READ_SLICE);
+            if (is_read_slice_inverted) {
+                set(Gradient_axe_slice, GradientAxe.R);
+                set(Gradient_axe_read, GradientAxe.S);
+                double off_center_distance_tmp = off_center_distance_3D;
+                off_center_distance_3D = off_center_distance_1D;
+                off_center_distance_1D = off_center_distance_tmp;
+            } else {
+                set(Gradient_axe_slice, GradientAxe.S);
+                set(Gradient_axe_read, GradientAxe.R);
+            }
+        }
 
         getParam(OFF_CENTER_FIELD_OF_VIEW_3D).setValue(off_center_distance_3D);
         getParam(OFF_CENTER_FIELD_OF_VIEW_2D).setValue(off_center_distance_2D);
@@ -408,8 +406,8 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
         // Pixel dimension calculation
         acqMatrixDimension1D = getInt(USER_MATRIX_DIMENSION_1D) * (isFovDoubled ? 2 : 1);
-        if(hasParam(RESOLUTION_FREQUENCY))
-        getParam(RESOLUTION_FREQUENCY).setValue(fov_eff / acqMatrixDimension1D); // frequency true resolution for display
+        if (hasParam(RESOLUTION_FREQUENCY))
+            getParam(RESOLUTION_FREQUENCY).setValue(fov_eff / acqMatrixDimension1D); // frequency true resolution for display
 
         // MATRIX
         double spectralWidthPerPixel = getDouble(SPECTRAL_WIDTH_PER_PIXEL);

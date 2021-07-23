@@ -369,7 +369,7 @@ public class SatBand implements ModelInterface {
                 n += 1;
             }
         } else if (isTofBandEnabled) {
-            if (parent.isMultiplanar && !parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
+            if (parent.isMultiplanar && !parent.getBoolean(TofSat.UP.TOF2D_MT_CALI)) {
                 double satband_distance_from_slice = parent.getDouble(TofSat.UP.TOF2D_SB_DISTANCE_FROM_SLICE);
                 double off_center_slice_pos = satband_distance_from_slice + satband_thickness / 2.0; // sat band cranial from voxel
                 double off_center_slice_neg = -off_center_slice_pos;  // caudal
@@ -436,7 +436,7 @@ public class SatBand implements ModelInterface {
             } else {
                 Log.error(getClass(), "User Param TX_LENGTH_90 or TX_LENGTH does not exist");
             }
-            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
+            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_CALI)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE) && parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE) > 0.01F) {
                     if (parent.hasParam(TofSat.UP.TOF3D_MT_TX_LENGTH)) {
                         double tx_bandwidth_90_sb = parent.getDouble(TofSat.UP.TOF3D_MT_BANDWIDTH);
@@ -510,7 +510,7 @@ public class SatBand implements ModelInterface {
             double flip_90_sat_degree = Math.toDegrees((isTofBandEnabled ? 1.5 : 1) * flip_90_sat);
             flip_angle_satband = pulseTXSatBand.isSlr() ? 90 : flip_90_sat_degree;  //ha slr,akkor legyen 90,különben szar a szeletprofil!
 
-            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_Cali)) {
+            if ((isTofBandEnabled && !parent.isMultiplanar) || parent.getBoolean(TofSat.UP.TOF2D_MT_CALI)) {
                 if (parent.hasParam(TofSat.UP.TOF3D_MT_FLIP_ANGLE)) {
                     //flip_angle_satband = parent.getDouble(TofSat.UP.TOF3D_MT_FLIP_ANGLE);
                     flip_angle_satband = 360.0 * parent.getDouble(TofSat.UP.TOF3D_MT_TX_LENGTH) * parent.getDouble(TofSat.UP.TOF3D_MT_GAMMA_B1);

@@ -271,7 +271,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
 
     public void clcFovPhase() {
         fovPhase = (getBoolean(FOV_SQUARE)) ? getDouble(FIELD_OF_VIEW) : getDouble(FIELD_OF_VIEW_PHASE);
-        fovPhase = fovPhase > getDouble(FIELD_OF_VIEW) ? getDouble(FIELD_OF_VIEW) : fovPhase;
+        //fovPhase = fovPhase > getDouble(FIELD_OF_VIEW) ? getDouble(FIELD_OF_VIEW) : fovPhase;
         getParam(FIELD_OF_VIEW_PHASE).setValue(fovPhase);
         try {
             getParam(PHASE_FIELD_OF_VIEW_RATIO).setValue((fovPhase / getDouble(FIELD_OF_VIEW) * 100.0));    // FOV ratio for display
