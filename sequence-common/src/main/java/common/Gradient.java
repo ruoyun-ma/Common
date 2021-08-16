@@ -13,7 +13,9 @@ import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.table.Order;
 import rs2d.spinlab.tools.utility.Nucleus;
 
+import java.lang.reflect.Array;
 import java.util.ArrayList;
+import java.util.Arrays;
 
 /**
  * Class Gradient
@@ -1033,7 +1035,7 @@ public class Gradient {
         }
 
         double indexNew;
-        if (amplitudeArray != null) {
+        if (amplitudeArray != null && !Double.isNaN(amplitudeArray[0])) {
             double[] newTable = new double[acquisitionMatrixDimension3D];
 
             System.out.println("----- " + plugin.getName());

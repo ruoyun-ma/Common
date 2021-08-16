@@ -92,8 +92,8 @@ public class FatSat implements ModelInterface {
         isFSorFSWEnabled = isFatSatEnabled || isFatSatWepEnabled;
         parent.set(SP.Enable_fs, isFSorFSWEnabled);
 
-        parent.getParam(UP.FATSAT_BANDWIDTH).setDefaultValue(parent.protonFrequency * 3.5);
-        parent.getParam(UP.FATSAT_OFFSET_FREQ).setDefaultValue(parent.protonFrequency * 3.5);
+        //parent.getParam(UP.FATSAT_BANDWIDTH).setDefaultValue(parent.protonFrequency * 3.5);
+        //parent.getParam(UP.FATSAT_OFFSET_FREQ).setDefaultValue(parent.protonFrequency * 3.5);
 
         if (parent.hasParam(UP.FAT_SATURATION_ENABLED)) {
             parent.getParam(UP.FAT_SATURATION_ENABLED).setValue(isFatSatEnabled);
@@ -176,6 +176,7 @@ public class FatSat implements ModelInterface {
     protected void initPulseandGrad() throws Exception {
         pulseTXFatSat = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_fs, SP.Tx_phase_fs,
                 SP.Time_tx_fs, SP.Tx_shape_fs, SP.Tx_shape_phase_fs, SP.Freq_offset_tx_fs);
+
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_fs.name()) != null) {
             pulseTXFatSat.createAttOffset(parent.getSequence(), SP.Tx_att_offset_fs);
         }
