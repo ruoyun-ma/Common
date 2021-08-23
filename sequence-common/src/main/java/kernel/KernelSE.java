@@ -468,10 +468,13 @@ public abstract class KernelSE extends SeqPrep {
             boolean test90 = gradSlice.prepareSliceSelection(tx_bandwidth_90, slice_thickness_excitation);
             boolean test180 = gradSlice180.prepareSliceSelection(tx_bandwidth_180, slice_thickness_excitation_180);
             if (!test90 || !test180) {
-                slice_thickness_excitation = Math.max(gradSlice.getSliceThickness(), gradSlice180.getSliceThickness());
-                double slice_thickness_min = (isMultiplanar ? slice_thickness_excitation : (slice_thickness_excitation / userMatrixDimension3D));
-                notifyOutOfRangeParam(SLICE_THICKNESS, slice_thickness_min, ((NumberParam) getParam(SLICE_THICKNESS)).getMaxValue(), "Pulse length too short to reach this slice thickness");
-                sliceThickness = slice_thickness_min;
+                if (isMultiplanar) {
+                    slice_thickness_excitation = Math.max(gradSlice.getSliceThickness(), gradSlice180.getSliceThickness());
+                    double slice_thickness_min = (isMultiplanar ? slice_thickness_excitation : (slice_thickness_excitation / userMatrixDimension3D));
+                    notifyOutOfRangeParam(SLICE_THICKNESS, slice_thickness_min, ((NumberParam) getParam(SLICE_THICKNESS)).getMaxValue(), "Pulse length too short to reach this slice thickness");
+                    sliceThickness = slice_thickness_min;
+                }else
+                    notifyOutOfRangeParam(FIELD_OF_VIEW_3D, fov3d, ((NumberParam) getParam(FIELD_OF_VIEW_3D)).getMaxValue(), "Pulse length too short to reach this fov3d");
             }
         }
         gradSlice.applyAmplitude();

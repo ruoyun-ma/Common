@@ -323,10 +323,13 @@ public abstract class KernelGE extends SeqPrep {
         slice_thickness_excitation = (isMultiplanar ? sliceThickness : (sliceThickness * userMatrixDimension3D));
         gradSlice = Gradient.createGradient(getSequence(), Grad_amp_slice, Time_tx, Grad_shape_rise_up, Grad_shape_rise_down, Time_grad_ramp, nucleus);
         if (isEnableSlice && !gradSlice.prepareSliceSelection(tx_bandwidth_90, slice_thickness_excitation)) {
-            slice_thickness_excitation = gradSlice.getSliceThickness();
-            double slice_thickness_min = (isMultiplanar ? slice_thickness_excitation : (slice_thickness_excitation / userMatrixDimension3D));
-            notifyOutOfRangeParam(SLICE_THICKNESS, slice_thickness_min, ((NumberParam) getParam(SLICE_THICKNESS)).getMaxValue(), "Pulse length too short to reach this slice thickness");
-            sliceThickness = slice_thickness_min;
+            if (isMultiplanar) {
+                slice_thickness_excitation = gradSlice.getSliceThickness();
+                double slice_thickness_min = (isMultiplanar ? slice_thickness_excitation : (slice_thickness_excitation / userMatrixDimension3D));
+                notifyOutOfRangeParam(SLICE_THICKNESS, slice_thickness_min, ((NumberParam) getParam(SLICE_THICKNESS)).getMaxValue(), "Pulse length too short to reach this slice thickness");
+                sliceThickness = slice_thickness_min;
+            } else
+                notifyOutOfRangeParam(FIELD_OF_VIEW_3D, fov3d, ((NumberParam) getParam(FIELD_OF_VIEW_3D)).getMaxValue(), "Pulse length too short to reach this fov3d");
         }
         gradSlice.applyAmplitude();
 
@@ -444,7 +447,7 @@ public abstract class KernelGE extends SeqPrep {
             models.get(ExtTrig.class).nb_trigger = 1;
         }
         //if (isMultiplanar)
-            acqMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
+        acqMatrixDimension4D = models.get(ExtTrig.class).nb_trigger * nb_dynamic_acquisition;
         userMatrixDimension4D = acqMatrixDimension4D;
 
         getParam(ACQUISITION_MATRIX_DIMENSION_4D).setValue(isKSCenterMode ? 1 : acqMatrixDimension4D);
