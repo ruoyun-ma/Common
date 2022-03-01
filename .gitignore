@@ -3,3 +3,6 @@
 /target/
 *.class
 *.jar
+/sequence-common/.idea/*
+/sequence-common/target/*
+/sequence-common/*.iml
