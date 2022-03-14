@@ -81,7 +81,7 @@ public class Gradient {
         shapeDownTable = shapeDownTab;
         rampTimeUpTable = rampTimeUpTab;
         rampTimeDownTable = rampTimeDownTab;
-        gMax = GradientMath.getMaxGradientStrength();
+        gMax = Math.abs(GradientMath.getMaxGradientStrength());
         init();
     }
 
@@ -92,7 +92,7 @@ public class Gradient {
         shapeDownTable = shapeDownTab;
         rampTimeUpTable = rampTimeUpTab;
         rampTimeDownTable = rampTimeDownTab;
-        gMax = GradientMath.getMaxGradientStrength();
+        gMax = Math.abs(GradientMath.getMaxGradientStrength());
         this.nucleus = nucleus;
         init();
     }
@@ -901,7 +901,7 @@ public class Gradient {
             int fact = 1;
             for (int i = 0; i < new_steps; i++) {
                 int ii = i * fact;
-                newTable[i] = amplitudeArray[steps-ii-1];
+                newTable[i] = amplitudeArray[steps - ii - 1];
             }
             amplitudeArray = newTable;
             steps = new_steps;
@@ -948,7 +948,7 @@ public class Gradient {
         }
     }
 
-    public void reoderPhaseEncoding(int ...pos) {
+    public void reoderPhaseEncoding(int... pos) {
         double[] newTable = new double[pos.length];
         for (int j = 0; j < pos.length; j++) {
             newTable[j] = amplitudeArray[pos[j]];
@@ -978,6 +978,20 @@ public class Gradient {
         }
         amplitudeArray = newTable;
         steps = traj.size() / 2;
+
+        // --------- TODO : ones plugin.getSize() will be implemented replace the code above by the following lines :
+/*        int[] kpos;
+        int[] sizeData = plugin.getSize(); // plugin.getScanDimension()?
+        double[] newTable = new double[sizeData[1]];
+        for (int scan2D = 0; scan2D < sizeData[1]; scan2D++) {
+            kpos = plugin.transf(0, scan2D, 0, 0);
+            newTable[scan2D] = amplitudeArray[kpos[1]];
+            // System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   ");
+            //  System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   |  "+traj[scan2D * 2 ]+"  "+traj[scan2D * 2 + 1]);
+        }
+        steps =  sizeData[1];
+        amplitudeArray = newTable;*/
+
     }
 
     //    Extract traj ordering from traj list of plugin
@@ -987,26 +1001,53 @@ public class Gradient {
         System.out.println("traj.size() " + traj.length);
         for (int j = 0; j < traj.length / 2; j++) {
             newTable[j] = amplitudeArray[traj[j * 2]];
+            System.out.println(traj[j * 2 ]+"   "+traj[j * 2 + 1]);
         }
         amplitudeArray = newTable;
         steps = traj.length / 2;
 
+        // --------- TODO : ones plugin.getSize() will be implemented replace the code above by the following lines :
+/*        int[] kpos;
+        int[] sizeData = plugin.getSize(); // plugin.getScanDimension()?
+        double[] newTable = new double[sizeData[1]];
+        for (int scan2D = 0; scan2D < sizeData[1]; scan2D++) {
+            kpos = plugin.transf(0, scan2D, 0, 0);
+            newTable[scan2D] = amplitudeArray[kpos[2]];
+            // System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   ");
+            //  System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   |  "+traj[scan2D * 2 ]+"  "+traj[scan2D * 2 + 1]);
+        }
+        steps =  sizeData[1];
+        amplitudeArray = newTable;*/
     }
 
     //    Extract traj ordering from traj list of plugin
     public void reoderPhaseEncoding3D(TransformPlugin plugin) {
+
         int[] traj = plugin.invTransf(0, 0, 0, 0); // fake input
         double[] newTable = new double[traj.length / 2];
         System.out.println("traj.size() " + traj.length);
-
         for (int j = 0; j < traj.length / 2; j++) {
             newTable[j] = amplitudeArray[traj[j * 2 + 1]];
         }
-        amplitudeArray = newTable;
         steps = traj.length / 2;
+
+        amplitudeArray = newTable;
+
+       // --------- TODO : ones plugin.getSize() will be implemented replace the code above by the following lines :
+/*        int[] kpos;
+        int[] sizeData = plugin.getSize();
+        double[] newTable = new double[sizeData[1]];
+        for (int scan2D = 0; scan2D < sizeData[1]; scan2D++) {
+            kpos = plugin.transf(0, scan2D, 0, 0);
+            newTable[scan2D] = amplitudeArray[kpos[2]];
+            // System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   ");
+            //  System.out.println(scan2D + "  " + kpos[1] + "   " + kpos[2] + "   |  "+traj[scan2D * 2 ]+"  "+traj[scan2D * 2 + 1]);
+        }
+        steps =  sizeData[2];*/
     }
 
-    public void reoderPhaseEncoding(TransformPlugin plugin, int echoTrainLength, int acquisitionMatrixDimension2D, int acquisitionMatrixDimension1D) {
+    public void reoderPhaseEncoding(TransformPlugin plugin, int echoTrainLength, int acquisitionMatrixDimension2D,
+                                    int acquisitionMatrixDimension1D) {
         // flow Comp
         if (gradFlowComp != null) {
             gradFlowComp.reoderPhaseEncoding(plugin, echoTrainLength, acquisitionMatrixDimension2D, acquisitionMatrixDimension1D);
