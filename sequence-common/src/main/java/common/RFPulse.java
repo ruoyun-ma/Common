@@ -302,8 +302,7 @@ public class RFPulse {
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
         double instrument_length_180 = pulse.getHardPulse180().x;
-        double power_factor = Utility.powerFillingFactor(shape) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
-        // in future version V2019.07: double power_factor = Utility.complexPowerFillingFactor(shape) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
+        double power_factor = Utility.complexPowerFillingFactor(shape, shapePhase) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
         double instrument_power_180 = pulse.getHardPulse180().y / power_factor;
         double power_180 = instrument_power_180 * Math.pow(instrument_length_180 / pulseDuration, 2);
 
@@ -337,8 +336,7 @@ public class RFPulse {
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
-        double power_factor = Utility.powerFillingFactor(shape) / getSlrPowerFactors90();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
-        // in future version V2019.07: double power_factor = Utility.complexPowerFillingFactor(shape) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
+        double power_factor = Utility.complexPowerFillingFactor(shape, shapePhase) / getSlrPowerFactors90();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
         double instrument_power_90 = pulse.getHardPulse90().y / power_factor;
         double instrument_length = pulse.getHardPulse90().x;
         double power = instrument_power_90 * Math.pow(instrument_length / pulseDuration, 2);
@@ -364,8 +362,7 @@ public class RFPulse {
         double tx_amp;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
-        double power_factor = Utility.powerFillingFactor(shape) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
-        // in future version V2019.07: double power_factor = Utility.complexPowerFillingFactor(shape) ;       // get RF pulse power factor from instrument to calculate RF pulse amplitude
+        double power_factor = Utility.complexPowerFillingFactor(shape, shapePhase) / getSlrPowerFactors180();       // get RF pulse power factor from instrument to calculate RF pulse amplitude
         double instrument_power_180 = pulse.getHardPulse180().y / power_factor;
         double instrument_length = pulse.getHardPulse180().x;
         double power = instrument_power_180 * Math.pow(instrument_length / pulseDuration, 2);
@@ -410,8 +407,7 @@ public class RFPulse {
         boolean test_change_time = true;
         Probe probe = Instrument.instance().getTransmitProbe();
         ProbeChannelPower pulse = TxMath.getProbePower(probe, null, nucleus.name());
-        double power_factor = Utility.powerFillingFactor(shape) / (flipAngle < 135 ? getSlrPowerFactors90() : getSlrPowerFactors180());       // get RF pulse power factor from instrument to calculate RF pulse amplitude
-        // in future version V2019.07: double power_factor = Utility.complexPowerFillingFactor(shape) ;       // get RF pulse power factor from instrument to calculate RF pulse amplitude
+        double power_factor = Utility.complexPowerFillingFactor(shape, shapePhase) / (flipAngle < 135 ? getSlrPowerFactors90() : getSlrPowerFactors180());       // get RF pulse power factor from instrument to calculate RF pulse amplitude
         double instrument_length = flipAngle < 135 ? pulse.getHardPulse90().x : pulse.getHardPulse180().x;
         double instrument_power = (flipAngle < 135 ? pulse.getHardPulse90().y : pulse.getHardPulse180().y) / power_factor;
         powerPulse = instrument_power * Math.pow(instrument_length / pulseDuration, 2) * Math.pow(flipAngle / (flipAngle < 135 ? 90 : 180), 2);
