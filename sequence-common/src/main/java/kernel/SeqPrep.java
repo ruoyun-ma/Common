@@ -1,16 +1,16 @@
 package kernel;
 
-import rs2d.spinlab.instrument.Instrument;
-import rs2d.spinlab.instrument.InstrumentTxChannel;
+import rs2d.spinlab.api.Hardware;
+import rs2d.spinlab.exception.ConfigurationException;
 import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequenceGenerator.util.GradientRotation;
-import rs2d.spinlab.sequenceGenerator.util.Hardware;
 import rs2d.spinlab.tools.utility.GradientAxe;
 import rs2d.spinlab.tools.utility.Nucleus;
 
 import static java.util.Arrays.asList;
 
 import java.util.Collections;
+import java.util.List;
 
 import common.*;
 import model.*;
@@ -44,7 +44,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 
     @Override
-    public void initUserParam() {
+    public void initUserParam () throws ConfigurationException {
         isKSCenterMode = getBoolean(KS_CENTER_MODE);
         isEnablePhase3D = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE_3D);
         isEnablePhase = !isKSCenterMode && getBoolean(GRADIENT_ENABLE_PHASE);
@@ -83,8 +83,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
         echoTrainLength = hasParam(ECHO_TRAIN_LENGTH) ? getInt(ECHO_TRAIN_LENGTH) : 1;
 
         spectralWidth = getDouble(SPECTRAL_WIDTH);
-        InstrumentTxChannel txCh = Instrument.instance().getTxChannels().get(getListInt(TX_ROUTE).get(0));
-        blankingDelay = Math.max(minInstructionDelay, txCh.getRfAmpChannel().getBlankingDelay());
+        blankingDelay = Math.max(minInstructionDelay, Hardware.getRfAmplifierChannelBlankingDelay(getListInt(TX_ROUTE).get(0)));
         if (hasParam(MODALITY)) {
             getParam(MODALITY).setValue("MRI");
         }
@@ -96,23 +95,23 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
     @Override
     protected void iniTxRx() throws Exception {
-        getParam(MAGNETIC_FIELD_STRENGTH).setDefaultValue(Instrument.instance().getDevices().getMagnet().getField());
-        getParam(DIGITAL_FILTER_SHIFT).setDefaultValue(Instrument.instance().getDevices().getCameleon().getAcquDeadPointCount());
-        getParam(DIGITAL_FILTER_REMOVED).setDefaultValue(Instrument.instance().getDevices().getCameleon().isRemoveAcquDeadPoint());
+        getParam(MAGNETIC_FIELD_STRENGTH).setDefaultValue(Hardware.getMagnetFieldStrength());
+        getParam(DIGITAL_FILTER_SHIFT).setDefaultValue(Hardware.getNbAcquisitionDeadPoints());
+        getParam(DIGITAL_FILTER_REMOVED).setDefaultValue(Hardware.isRemoveAcquisitionDeadPoints());
 
         nucleus = Nucleus.getNucleusForName(getText(NUCLEUS_1));
-        protonFrequency = Instrument.instance().getDevices().getMagnet().getProtonFrequency();
+        protonFrequency = Hardware.getProtonFrequency();
         observeFrequency = nucleus.getFrequency(protonFrequency) + getDouble(OFFSET_FREQ_1);
         getParam(BASE_FREQ_1).setValue(nucleus.getFrequency(protonFrequency));
 
-        min_time_per_acq_point = Hardware.getSequenceCompiler().getTransfertTimePerDataPt();
+        min_time_per_acq_point = Hardware.getTransferTimePerDataPt();
         gMax = GradientMath.getMaxGradientStrength();
 
         set(Rx_gain, RECEIVER_GAIN);
-        getParam(RECEIVER_COUNT).setValue(Instrument.instance().getObservableRxs(nucleus).size());
+        getParam(RECEIVER_COUNT).setValue(Hardware.getReceiverCount(nucleus));
 
-        set(Intermediate_frequency, Instrument.instance().getIfFrequency());
-        getParam(INTERMEDIATE_FREQUENCY).setValue(Instrument.instance().getIfFrequency());
+        set(Intermediate_frequency, Hardware.getIntermediateFrequency());
+        getParam(INTERMEDIATE_FREQUENCY).setValue(Hardware.getIntermediateFrequency());
 
         set(Tx_frequency, observeFrequency);
         getParam(OBSERVED_FREQUENCY).setValue(observeFrequency);
@@ -191,7 +190,8 @@ public abstract class SeqPrep extends SeqPrepBasics {
         if (getBoolean(TX_AMP_ATT_AUTO)) {
             for (RFPulse eachPulse : rfPulses) {
                 if (eachPulse.getFlipAngle() > 0.0)
-                    rfPulsesAtt.add(eachPulse.prepAtt(80, getListInt(TX_ROUTE)));
+                    eachPulse.prepAtt(80, getListInt(TX_ROUTE));
+                    rfPulsesAtt.add(eachPulse.getAtt());
             }
             set(Tx_att, Collections.min(rfPulsesAtt));
 
@@ -414,8 +414,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
         spectralWidth = isFovDoubled ? (spectralWidth * 2) : spectralWidth;
         spectralWidth = getBoolean(SPECTRAL_WIDTH_OPT) ? spectralWidth : spectralWidthPerPixel * acqMatrixDimension1D;
 
-//        spectralWidth = Hardware.getNearestSpectralWidth(spectralWidth);      // get real spectral width from Chameleon
-        spectralWidth = Hardware.getSequenceCompiler().getNearestSW(spectralWidth);      //  to be replaced by above when correctly implemented for Cam4 05/07/2019
+        spectralWidth = Hardware.getNearestSpectralWidth(spectralWidth);  // get real spectral width from Cameleon
         double spectralWidthUP = isFovDoubled ? (spectralWidth / 2) : spectralWidth;
         spectralWidthPerPixel = spectralWidth / acqMatrixDimension1D;
         getParam(SPECTRAL_WIDTH_PER_PIXEL).setValue(spectralWidthPerPixel);
@@ -469,7 +468,7 @@ public abstract class SeqPrep extends SeqPrepBasics {
 
     protected void getADC() {
         set(Time_rx, getDouble(ACQUISITION_TIME_PER_SCAN));
-        set(LO_att, Instrument.instance().getLoAttenuation());
+        set(LO_att, Hardware.getLoAttenuation());
     }
 
     protected void getROGrad() throws Exception {

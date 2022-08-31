@@ -1,5 +1,6 @@
 package kernel;
 
+import rs2d.spinlab.exception.ConfigurationException;
 import rs2d.spinlab.instrument.util.GradientMath;
 import rs2d.spinlab.sequence.SequenceTool;
 import rs2d.spinlab.sequenceGenerator.GeneratorParamEnum;
@@ -26,6 +27,7 @@ import static kernel.KernelGE.SP.*;
  * <p>
  * Keyhole/ TOF/ Flow/ Elliptical Sampling etc. are kept in each individual sequence
  * <p>
+ *
  */
 
 public abstract class KernelGE extends SeqPrep {
@@ -140,7 +142,7 @@ public abstract class KernelGE extends SeqPrep {
 // -----   GENERATE
 // ==============================
     @Override
-    public void initUserParam() {
+    public void initUserParam() throws ConfigurationException {
         super.initUserParam();
         getParam(SEQUENCE_VERSION).setValue(sequenceVersion);
 
@@ -283,7 +285,7 @@ public abstract class KernelGE extends SeqPrep {
         // Calculation RF pulse parameters  1/4 : Pulse declaration & Fatsat Flip angle calculation
         // -----------------------------------------------
         set(Time_tx, txLength90);    // set RF pulse length to sequence
-        pulseTX = RFPulse.createRFPulse(getSequence(), Tx_att, Tx_amp, Tx_phase, Time_tx, Tx_shape, Tx_shape_phase, Tx_freq_offset);
+        pulseTX = RFPulse.createRFPulse(getSequence(), Tx_att, Tx_amp, Tx_phase, Time_tx, Tx_shape, Tx_shape_phase, Tx_freq_offset, nucleus);
         if (getSequence().getPublicTable(Tx_att_offset.name()) != null) {
             pulseTX.createAttOffset(getSequence(), Tx_att_offset);
         }
@@ -352,10 +354,10 @@ public abstract class KernelGE extends SeqPrep {
         // ------------------------------------------------------------------
         double grad_ratio_slice_refoc = isEnableSlice ? getDouble(SLICE_REFOCUSING_GRADIENT_RATIO) : 0.0;   // get slice refocussing ratio
 
-        RFPulse pulseTXPrep = RFPulse.createRFPulse(getSequence(), Time_grad_ramp, FreqOffset_tx_prep);
+        RFPulse pulseTXPrep = RFPulse.createRFPulse(getSequence(), Time_grad_ramp, FreqOffset_tx_prep, nucleus);
         pulseTXPrep.setCompensationFrequencyOffset(pulseTX, grad_ratio_slice_refoc);
 
-        RFPulse pulseTXComp = RFPulse.createRFPulse(getSequence(), Time_grad_ramp, FreqOffset_tx_comp);
+        RFPulse pulseTXComp = RFPulse.createRFPulse(getSequence(), Time_grad_ramp, FreqOffset_tx_comp, nucleus);
         pulseTXComp.setCompensationFrequencyOffset(pulseTX, grad_ratio_slice_refoc);
 
     }
@@ -472,7 +474,7 @@ public abstract class KernelGE extends SeqPrep {
 
     @Override
     protected void getRx() {
-        pulseRX = RFPulse.createRFPulse(getSequence(), Time_rx, Rx_freq_offset, Rx_phase);
+        pulseRX = RFPulse.createRFPulse(getSequence(), Time_rx, Rx_freq_offset, Rx_phase, nucleus);
         pulseRX.setFrequencyOffsetReadout(gradReadout, off_center_distance_1D);
 
         //fill the OFF_CENTER_FIELD_OF_VIEW_EFF User Parameter
@@ -491,7 +493,7 @@ public abstract class KernelGE extends SeqPrep {
         //--------------------------------------------------------------------------------------
         pulseRX.setPhase(0.0);
 
-        RFPulse pulseRFSpoiler = RFPulse.createRFPulse(getSequence(), SP.Time_rf_spoiling, SP.FreqOffset_RFSpoiling);
+        RFPulse pulseRFSpoiler = RFPulse.createRFPulse(getSequence(), SP.Time_rf_spoiling, SP.FreqOffset_RFSpoiling, nucleus);
         pulseRFSpoiler.setFrequencyOffsetForPhaseShift(is_rf_spoiling ? 117.0 : 0.0);
 
         // ----------------------------------------------------------------------------------------------
@@ -610,8 +612,6 @@ public abstract class KernelGE extends SeqPrep {
     protected void getUPDisp() {
         this.getParam(TX_ATT).setValue(pulseTX.getAttParamValue());            // display PULSE_ATT
         this.getParam(TX_AMP).setValue(pulseTX.getAmp());     // display 90° amplitude
-        this.getParam(TX_AMP_90).setValue(pulseTX.getAmp90());     // display 90° amplitude
-        this.getParam(TX_AMP_180).setValue(pulseTX.getAmp180());   // display 180° amplitude
     }
 
     @Override

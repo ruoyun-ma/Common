@@ -18,6 +18,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 
 /**
+ * Commons V2.8: add instrument interface
  * Class Gradient
  * V2.10 Traj
  * V2.9 with ratio for non proton
@@ -35,8 +36,8 @@ public class Gradient {
     protected Table flatTimeTable = null;
     protected Shape shapeUpTable = null;
     protected Shape shapeDownTable = null;
-    protected Table rampTimeUpTable;
-    protected Table rampTimeDownTable;
+    protected Table rampTimeUpTable = null;
+    protected Table rampTimeDownTable = null;
 
     protected double amplitude = Double.NaN;
     protected double staticArea = Double.NaN;
@@ -59,15 +60,14 @@ public class Gradient {
 
     // PE
     protected boolean bPhaseEncoding = false;
-    protected double fovPhase = Double.NaN;
+    protected boolean bStaticGradient = false;
+    protected boolean bRefocalizeGradient = false;
     protected boolean isKSCentred = false;
-
+    protected double fovPhase = Double.NaN;
     protected double k0pos = Double.NaN;
     protected double spoilerExcess = Double.NaN;
     protected double minTopTime = Double.NaN;
 
-    protected boolean bRefocalizeGradient = false;
-    protected boolean bStaticGradient = false;
 
     protected Gradient gradFlowComp = null;
 
@@ -260,23 +260,21 @@ public class Gradient {
         return Math.abs(getTotalArea());
     }
 
-    public double calculateStaticArea() {
+    public void calculateStaticArea() {
         if (Double.isNaN(equivalentTime)) {
             prepareEquivalentTime();
         }
         staticArea = (equivalentTime) * amplitude;
-        return staticArea;
     }
 
     /**
      * calculate Static Amplitude from staticArea
      */
-    public double calculateStaticAmplitude() {
+    public void calculateStaticAmplitude() {
         if (Double.isNaN(equivalentTime)) {
             prepareEquivalentTime();
         }
         amplitude = staticArea / (equivalentTime);
-        return amplitude;
     }
 
     public void setAmplitude(double... values) {
@@ -355,30 +353,24 @@ public class Gradient {
     /**
      * Calculate equivalent shape rise time from rampTime ans shapes
      * equivalent time for rectangular gradient with same Area and amplitude
-     *
-     * @return grad_shape_rise_time :
      */
-    protected double computeShapeRiseTime() {
+    protected void computeShapeRiseTime() {
         double grad_shape_rise_factor_up = Utility.voltageFillingFactor(shapeUpTable);
         double grad_shape_rise_factor_down = Utility.voltageFillingFactor(shapeDownTable);
         double grad_up_rise_time = rampTimeUpTable.get(0).doubleValue();
         double grad_down_rise_time = rampTimeDownTable.get(0).doubleValue();
         grad_shape_rise_time = grad_shape_rise_factor_up * grad_up_rise_time + grad_shape_rise_factor_down * grad_down_rise_time;
-        return grad_shape_rise_time;
     }
 
     /**
      * Calculate equivalentTime of a rectangular gradient with same Area and amplitude
-     *
-     * @return equivalentTime :
      */
-    public double prepareEquivalentTime() {
+    public void prepareEquivalentTime() {
         if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
         minTopTime = flatTimeTable.get(0).doubleValue();
         equivalentTime = (flatTimeTable.get(0).doubleValue() + grad_shape_rise_time);
-        return equivalentTime;
     }
 
     //    refocalize the entire gradient
@@ -389,9 +381,7 @@ public class Gradient {
             prepareEquivalentTime();
         }
 
-        double amp;
         if (gradToRef.getSteps() > 1) {
-            amp = gradToRef.getAmplitudeArray(0);
             amplitudeArray = new double[gradToRef.getSteps()];
             for (int i = 0; i < gradToRef.getSteps(); i++) {
                 amplitudeArray[i] = (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
@@ -399,7 +389,7 @@ public class Gradient {
             }
             steps = gradToRef.getSteps();
         } else {
-            amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
             double gradArea = gradToRefTime * amp;
             staticArea = -gradArea;
             calculateStaticAmplitude();
@@ -408,6 +398,37 @@ public class Gradient {
 
     public void refocalizeGradient() {
         calculateStaticAmplitude();
+    }
+
+    /**
+     * Refocalize the gradient with ratio of the top time
+     *
+     * @param gradToRef : Reference gradient to refocalize
+     * @param ratio     : ratio of the top time that will be taken into account
+     * @param blockID   : ramp up ID = 1 or ramp down ID = 3
+     */
+    public void refocalizeGradient_firstValue(Gradient gradToRef, double ratio, int blockID) {
+        bStaticGradient = true;
+        // Compute the equivalent time with respect to a rectangular gradient that is used later to compute the area to compensate
+        double gradToRefTime = (gradToRef.getEquivalentTimeBlock(blockID)[0] + gradToRef.getEquivalentTimeFlat(gradToRef.flatTimeTable, Math.abs(ratio))[0]);
+        if (Double.isNaN(equivalentTime)) {
+            prepareEquivalentTime();
+        }
+
+        if (gradToRef.getSteps() > 1) {
+            amplitudeArray = new double[1];
+            for (int i = 0; i < 1; i++) {
+                amplitudeArray[i] = -(ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
+//                    amplitudeArray[i] = -gradToRef.getAmplitudeArray(i);
+            }
+            System.out.println(amplitudeArray[0]);
+            steps = 1;
+        } else {
+            double amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
+            staticArea = -gradArea;
+            calculateStaticAmplitude();
+        }
     }
 
     //    refocalize the gradient with ratio of the top
@@ -444,9 +465,7 @@ public class Gradient {
             prepareEquivalentTime();
         }
 
-        double amp;
         if (gradToRef.getSteps() > 1) {
-            amp = gradToRef.getAmplitudeArray(0);
             amplitudeArray = new double[gradToRef.getSteps()];
             for (int i = 0; i < gradToRef.getSteps(); i++) {
                 amplitudeArray[i] = (ratio > 0 ? 1 : -1) * (gradToRef.getAmplitudeArray(i) * gradToRefTime) / (equivalentTime);
@@ -454,7 +473,7 @@ public class Gradient {
             }
             steps = gradToRef.getSteps();
         } else {
-            amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
+            double amp = !Double.isNaN(gradToRef.getAmplitude()) ? gradToRef.getAmplitude() : gradToRef.getAmplitudeArray(0);
             double gradArea = (ratio > 0 ? 1 : -1) * gradToRefTime * amp;
             staticArea = -gradArea;
             calculateStaticAmplitude();
@@ -488,7 +507,7 @@ public class Gradient {
         double Gs_M = Gs_Arm * Gs_A;
 
         double G3_Arm_toStart = getFlatTimeTable().get(0).doubleValue() / 2 + getRampTimeDownTable().get(0).doubleValue();
-        gradflowcomp.flowCalculateGradientAmpRefocMomentum(+Gs_M * ratioMomentum, G3_Arm_toStart);
+        gradflowcomp.flowCalculateGradientAmpRefocMomentum(Gs_M * ratioMomentum, G3_Arm_toStart);
         bStaticGradient = true;
         staticArea = -(Gs_A + gradflowcomp.getStaticArea());
 
@@ -512,7 +531,6 @@ public class Gradient {
         gradflowcomp.setStaticArea(-(Gs_A + getStaticArea()));
         gradflowcomp.calculateStaticAmplitude();
 
-
     }
 
     public void refocalizeGradientWithFlowCompWithDelay(Gradient grad, double ratioTime, Gradient gradflowcomp, double delta_G2_Grad, double ratioMomentum) {
@@ -526,7 +544,7 @@ public class Gradient {
         double Gs_A = (grad.getEquivalentTimeBlock(1)[0] + grad.getEquivalentTimeFlat(grad.flatTimeTable, ratioTime)[0]) * grad.getAmplitude();
         double Gs_M = Gs_Arm * Gs_A;
         double G2_Arm = gradflowcomp.getFlatTimeTable().get(0).doubleValue() / 2 + gradflowcomp.getRampTimeUpTable().get(0).doubleValue();
-        flowCalculateGradientAmpRefocMomentum(+Gs_M * ratioMomentum, G2_Arm);
+        flowCalculateGradientAmpRefocMomentum(Gs_M * ratioMomentum, G2_Arm);
 
         bStaticGradient = true;
         gradflowcomp.setStaticArea(-(Gs_A + getStaticArea()));
@@ -576,8 +594,8 @@ public class Gradient {
     /**
      * calculate readout Gradient Amplitude
      *
-     * @param spectralWidth
-     * @param fov
+     * @param spectralWidth : recepion bandwith
+     * @param fov           : field of view
      * @return testSpectralWidth : false if the Spectralwidth need to be nicreased(call getSpectralWidth() )
      */
     public boolean calculateReadoutGradient(double spectralWidth, double fov) throws Exception {
@@ -596,8 +614,8 @@ public class Gradient {
     /**
      * calculate spectral width max for a given FOV
      *
-     * @param fov
-     * @return sw
+     * @param fov : field of view
+     * @return sw : nearest bandwidth possible
      */
     public double solveSpectralWidthMax(double fov) throws Exception {
         double spectralWidth_init = (gMax * GradientMath.GAMMA * fov);
@@ -619,7 +637,7 @@ public class Gradient {
      * set READOUT gradient Amplitude ETL values with back and forth(+/-) sign
      *
      * @param ETL        : number of gradient values
-     * @param tableorder
+     * @param tableorder : acquisition order
      */
     public void applyReadoutEchoPlanarAmplitude(int ETL, Order tableorder) {
         order = tableorder;
@@ -924,6 +942,7 @@ public class Gradient {
 
     }
 
+    // for inline calibration add two scans without phase encoding before ansd after the PE
     public void reoderPhaseEncodingForSEEPIplus2() {
         int new_steps = steps + 2;
         double[] newTable = new double[new_steps];
@@ -1001,7 +1020,6 @@ public class Gradient {
         System.out.println("traj.size() " + traj.length);
         for (int j = 0; j < traj.length / 2; j++) {
             newTable[j] = amplitudeArray[traj[j * 2]];
-            System.out.println(traj[j * 2 ]+"   "+traj[j * 2 + 1]);
         }
         amplitudeArray = newTable;
         steps = traj.length / 2;
@@ -1046,8 +1064,8 @@ public class Gradient {
         steps =  sizeData[2];*/
     }
 
-    public void reoderPhaseEncoding(TransformPlugin plugin, int echoTrainLength, int acquisitionMatrixDimension2D,
-                                    int acquisitionMatrixDimension1D) {
+
+    public void reoderPhaseEncoding(TransformPlugin plugin, int echoTrainLength, int acquisitionMatrixDimension2D, int acquisitionMatrixDimension1D) {
         // flow Comp
         if (gradFlowComp != null) {
             gradFlowComp.reoderPhaseEncoding(plugin, echoTrainLength, acquisitionMatrixDimension2D, acquisitionMatrixDimension1D);
@@ -1119,23 +1137,20 @@ public class Gradient {
         return tmpInv;
     }
 
-    // add dummu scan for the PE gradient
+    // add dummy scan for the PE gradient
     public void addDummy(int dummyScan) {
         if (steps > 0) {
             double[] tmpAmp = new double[steps];
-            for (int i = 0; i < steps; i++) {
-                tmpAmp[i] = amplitudeArray[i];
-            }
+            System.arraycopy(amplitudeArray, 0, tmpAmp, 0, steps);
             amplitudeArray = new double[steps + dummyScan];
             for (int i = 0; i < dummyScan; i++) {
                 amplitudeArray[i] = tmpAmp[0];
             }
-            for (int i = 0; i < steps; i++) {
-                amplitudeArray[i + dummyScan] = tmpAmp[i];
-            }
+            System.arraycopy(tmpAmp, 0, amplitudeArray, dummyScan, steps);
             steps = steps + dummyScan;
         }
     }
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Spoiler
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -1193,34 +1208,25 @@ public class Gradient {
         double rise_time_down = rampTimeDownTable.get(0).doubleValue();
         double plato = flatTimeTable.get(0).doubleValue();
         double amp = amplitude;
+        double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato);
         if (order == 0) {
-            if (type == "slice") {
-                t = 0;
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-                return moment0;
-            } else if (type == "read") {
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-                return moment0;
+            if (type.equalsIgnoreCase("slice")) {
+                return moment0 / 2;
+            } else if (type.equalsIgnoreCase("read")) {
+                return moment0 / 2;
             } else {
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato);
                 return moment0;
             }
-        } else if (type == "slice") {
+        } else if (type.equalsIgnoreCase("slice")) {
             t = 0;
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-            double moment1 = 1 / 8 * amp * plato * plato + amp * (rise_time_up + rise_time_down) / 2 * (Math.PI * plato + (Math.PI - 2.0) * (rise_time_up + rise_time_down)) / Math.PI / Math.PI;
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
-        } else if (type == "read") {
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-            double moment1 = 1 / 2 * amp * ((rise_time_up + rise_time_down) / 2 * plato + plato * plato) + amp * (rise_time_up + rise_time_down) * (rise_time_up + rise_time_down) / Math.PI / Math.PI;
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
+            double moment1 = amp / 8 * plato * plato + amp * (rise_time_up + rise_time_down) / 2 * (Math.PI * plato + (Math.PI - 2.0) * (rise_time_up + rise_time_down)) / Math.PI / Math.PI;
+            return moment1 + t * moment0 / 2;
+        } else if (type.equalsIgnoreCase("read")) {
+            double moment1 = amp / 2 * ((rise_time_up + rise_time_down) / 2 * plato + plato * plato) + amp * (rise_time_up + rise_time_down) * (rise_time_up + rise_time_down) / Math.PI / Math.PI;
+            return moment1 + t * moment0 / 2;
         } else {
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato);
             double moment1 = amp * (plato + (rise_time_up + rise_time_down)) * ((rise_time_up + rise_time_down) / Math.PI + plato / 2);
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
+            return moment1 + t * moment0;
         }
     }
 
@@ -1238,9 +1244,9 @@ public class Gradient {
 
     public double[] getEquivalentTimeBlock(int blockID) {
         switch (blockID) {
-            case 1:
+            case 1: // shape up
                 return getEquivalentTimeBlock(shapeUpTable, rampTimeUpTable);
-            case 3:
+            case 3:// shape down
                 return getEquivalentTimeBlock(shapeDownTable, rampTimeDownTable);
             default:
                 return getEquivalentTimeBlock(null, flatTimeTable);
@@ -1256,15 +1262,11 @@ public class Gradient {
         } else {
             int n = shape.size();
             for (int t = 0; t < time.size(); t++) {
-                double sumPosWeight = 0;
+                double coefficient;
                 double sumWeight = 0;
-                double coef;
-                double pos;
                 for (int i = 0; i < n; i++) {
-                    pos = 100 / n * (1 / 2 + i);
-                    coef = shape.get(i).doubleValue();
-                    sumWeight += coef;
-                    sumPosWeight += coef * pos;
+                    coefficient = shape.get(i).doubleValue();
+                    sumWeight += coefficient;
                 }
                 double pctArea = sumWeight / (100 * n);
                 equivalentTime[t] = time.get(t).doubleValue() * pctArea;
@@ -1278,8 +1280,6 @@ public class Gradient {
         double[] equivalentTime = new double[time.size()];
         for (int t = 0; t < time.size(); t++) {
             equivalentTime[t] = time.get(t).doubleValue() * ratio;
-//            System.out.println(t + " "+time.get(t).doubleValue()+" * "+ratio);
-//            System.out.println( " =  "+equivalentTime[t]);
         }
         return equivalentTime;
     }
@@ -1314,7 +1314,12 @@ public class Gradient {
         return timeG;
     }
 
-    // Calculate the time arm position of the Gradient centroid
+    /**
+     * Calculate the time arm position of the gradients' centroid considering the total gradient area (ramp up + flat part + ramp down)
+     *
+     * @return centroid table
+     */
+    //
     public double[] getMomentArmTotal() {
         double[] mom1 = getMomentBlock(1);
         double[] eT11 = getEquivalentTimeBlock(1);
@@ -1326,21 +1331,25 @@ public class Gradient {
         int n2 = mom2.length;
         int n3 = mom3.length;
         int n = Math.max(Math.max(n1, n2), n3);
-        double[] momTotoal = new double[n];
+        double[] momTotal = new double[n];
         for (int i = 0; i < n; i++) {
             int i1 = Math.min(i, n1 - 1);
             int i2 = Math.min(i, n2 - 1);
             int i3 = Math.min(i, n3 - 1);
-            momTotoal[i] = (eT11[i1] * mom1[i1]
+            momTotal[i] = (eT11[i1] * mom1[i1]
                     + eT12[i2] * (mom2[i2] + getRampTimeUpTable().get(i1).doubleValue())
                     + eT13[i3] * (mom3[i3] + getRampTimeUpTable().get(i1).doubleValue() + getFlatTimeTable().get(i2).doubleValue())
             ) / (eT11[i1] + eT12[i2] + eT13[i3]);
         }
-        return momTotoal;
+        return momTotal;
     }
 
-    // Calculate the time position of the Gradient centroid,
-    // only ratio of the FLAT_PART and full RAMP DOWN is considered here
+    /**
+     * Calculate the time position of the gradients' centroid, only ratio of the FLAT_PART and full RAMP DOWN are considered here
+     *
+     * @param ratio : ratio between the gradient area to compensate and the total gradient area
+     * @return the centroid time for each gradient (flat part * ratio + ramp down)
+     */
     public double[] getMomentArmEnd(double ratio) {
         ratio = Math.min(1.0, Math.max(0.0, ratio));
         double[] arm2 = getArmFlatBlockToEnd(flatTimeTable, ratio);
@@ -1363,8 +1372,12 @@ public class Gradient {
         return momTotoal;
     }
 
-    // Calculate the time position of the Gradient centroid,
-    // only full RAMP UP and ratio of the FLAT_PART is considered here
+    /**
+     * Calculate the time position of the gradients' centroid, only full RAMP UP and ratio of FLAT_PART are considered here
+     *
+     * @param ratio : ratio between the gradient area to compensate and the total gradient area
+     * @return the centroid time for each gradient (ramp up + flat part * ratio)
+     */
     public double[] getMomentArmStart(double ratio) {
         ratio = Math.min(1.0, Math.max(0.0, ratio));
         double[] arm1 = getMomentBlock(1);
@@ -1375,20 +1388,27 @@ public class Gradient {
         int n2 = arm2.length;
         int n3 = arm1.length;
         int n = Math.max(Math.max(n1, n2), n3);
-        double[] momTotoal = new double[n];
+        double[] momTotal = new double[n];
         for (int i = 0; i < n; i++) {
             int i1 = Math.min(i, n1 - 1);
             int i2 = Math.min(i, n2 - 1);
             int i3 = Math.min(i, n3 - 1);
-            momTotoal[i] = (eT11[i3] * (arm1[i3]
+            momTotal[i] = (eT11[i3] * (arm1[i3]
                     + eT12[i2] * (arm2[i2] + getRampTimeUpTable().get(i1).doubleValue()))
             ) / (eT12[i2] + eT11[i3]);
         }
-        return momTotoal;
+        return momTotal;
     }
 
 
-    // Measure the position of the Gradient centroid when considering only the last part of a flat gradient
+    /**
+     * Measure the position of the gradients' centroid when considering only the last part of a flat gradient
+     *
+     * @param time  : table of Gradient application time
+     * @param ratio : ratio between the gradient area to compensate and the total gradient area
+     * @return the centroid time for each gradient
+     */
+    //
     public double[] getArmFlatBlockToEnd(Table time, double ratio) {
         ratio = Math.min(1.0, Math.max(0.0, ratio));
         double[] timeG = new double[time.size()];
@@ -1398,7 +1418,13 @@ public class Gradient {
         return timeG;
     }
 
-    // Measure the position of the Gradient centroid when considering only the first part of a flat gradient
+    /**
+     * Measure the position of the gradients' centroid when considering only the first part of a flat gradient
+     *
+     * @param time  : table of Gradient application time
+     * @param ratio : ratio between the gradient area to compensate and the total gradient area
+     * @return the centroid time for each gradient
+     */
     public double[] getArmFlatBlockfromStart(Table time, double ratio) {
         ratio = Math.min(1.0, Math.max(0.0, ratio));
         double[] timeG = new double[time.size()];
@@ -1408,51 +1434,17 @@ public class Gradient {
         return timeG;
     }
 
-
-    public double getMoment2(double t, String type, int order) {
-        double rise_time_up = rampTimeUpTable.get(0).doubleValue();
-        double rise_time_down = rampTimeDownTable.get(0).doubleValue();
-        double plato = flatTimeTable.get(0).doubleValue();
-        double amp = amplitude;
-        if (order == 0) {
-            if (type == "slice") {
-                t = 0;
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-                return moment0;
-            } else if (type == "read") {
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-                return moment0;
-            } else {
-                double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato);
-                return moment0;
-            }
-
-        } else if (type == "slice") {
-            t = 0;
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-            double moment1 = 1 / 8 * amp * plato * plato + amp * (rise_time_up + rise_time_down) / 2 * (Math.PI * plato + (Math.PI - 2.0) * (rise_time_up + rise_time_down)) / Math.PI / Math.PI;
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
-        } else if (type == "read") {
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato) / 2;
-            double moment1 = 1 / 2 * amp * ((rise_time_up + rise_time_down) / 2 * plato + plato * plato) + amp * (rise_time_up + rise_time_down) * (rise_time_up + rise_time_down) / Math.PI / Math.PI;
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
-        } else {
-            double moment0 = amp * (2 * (rise_time_up + rise_time_down) / Math.PI + plato);
-            double moment1 = amp * (plato + (rise_time_up + rise_time_down)) * ((rise_time_up + rise_time_down) / Math.PI + plato / 2);
-            double moment1_all = moment1 + t * moment0;
-            return moment1_all;
-        }
-    }
-
     // ---------------------------------------------------------------
-    // ----------------- General Methode----------------------------------------------
+    // ----------------- General Methods----------------------------------------------
 
+    /**
+     * Compute the nearest inferior bandwidth of the input bandwidth
+     *
+     * @param spectralWidth : target bandwidth
+     * @return Nearest inferior bandwidth
+     */
     public double getInferiorSW(double spectralWidth) throws Exception {
-        double SysClock = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getSystemClk();
-//        double SWmax = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getMaxSW()) // better when not rounded in Hz;
-        // Hardware.getSequenceCompiler() //future version
+        double SysClock = rs2d.spinlab.api.Hardware.getSystemClock();
         double decimationRef, SWmax;
         if (SysClock == 78125000) { /* Cameleon 4 */
             decimationRef = 8;
@@ -1465,10 +1457,14 @@ public class Gradient {
         return (SWmax * decimationRef) / (decim);
     }
 
+    /**
+     * Compute the nearest bandwidth of the input bandwidth
+     *
+     * @param spectralWidth : target bandwidth
+     * @return Nearest bandwidth (can be superior or inferior to the input bandwidth)
+     */
     public double getNearestSW(double spectralWidth) throws Exception {
-        double SysClock = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getSystemClk();
-//        double SWmax = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getMaxSW()) // better when not rounded in Hz;
-        // Hardware.getSequenceCompiler() //future version
+        double SysClock = rs2d.spinlab.api.Hardware.getSystemClock();
         double decimationRef, SWmax;
         if (SysClock == 78125000) { /* Cameleon 4 */
             decimationRef = 8;
@@ -1481,10 +1477,14 @@ public class Gradient {
         return (SWmax * decimationRef) / (decim);
     }
 
+    /**
+     * Compute the nearest superior bandwidth of the input bandwidth
+     *
+     * @param spectralWidth : target bandwidth
+     * @return Nearest superior bandwidth
+     */
     public double getSuperiorSW(double spectralWidth) throws Exception {
-        double SysClock = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getSystemClk();
-        //        double SWmax = DeviceManager.getInstance().getCompilerLoader().getCompiler().getSequenceCompiler().getMaxSW()) // better when not rounded in Hz;
-        // Hardware.getSequenceCompiler() //future version
+        double SysClock = rs2d.spinlab.api.Hardware.getSystemClock();
         double decimationRef, SWmax;
         if (SysClock == 78125000) { /* Cameleon 4 */
             decimationRef = 8;
@@ -1495,14 +1495,15 @@ public class Gradient {
         }
         double decim = (Math.ceil(SWmax * decimationRef / spectralWidth) - 1);
         return (SWmax * decimationRef) / (decim);
-
     }
 
-
-    private double ceilToSubDecimal(double numberToBeRounded, double Order) {
-        return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
-    }
-
+    /**
+     * Configure the sequence parameter table with specified values and loop order
+     *
+     * @param table  : Table name
+     * @param order  : Loop order
+     * @param values : Table values
+     */
     private void setSequenceTableValues(Table table, Order order, double... values) {
         table.clear();
         table.setOrder(order);
@@ -1512,4 +1513,13 @@ public class Gradient {
         }
     }
 
+    /**
+     * Ceil a number to a given decimal places
+     *
+     * @param numberToBeRounded : Double number
+     * @param Order             : Digits kept after the decimal point
+     */
+    private double ceilToSubDecimal(double numberToBeRounded, double Order) {
+        return Math.ceil(numberToBeRounded * Math.pow(10, Order)) / Math.pow(10, Order);
+    }
 }

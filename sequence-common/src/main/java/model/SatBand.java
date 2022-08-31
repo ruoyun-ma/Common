@@ -155,7 +155,7 @@ public class SatBand implements ModelInterface {
     public void prepFinal() {
         if (isAttAuto) {
             if (!(isTofBandEnabled && !parent.isMultiplanar))
-                parent.getParam(UP.SATBAND_TX_AMP).setValue(pulseTXSatBand.getAmp180()); //TODO: XG: JR, please check here, some sequence use pulseTXSatBand.getAmp90() instead
+                parent.getParam(UP.SATBAND_TX_AMP).setValue(pulseTXSatBand.getAmp());
         } else
             pulseTXSatBand.setAmp(parent.getDouble(UP.SATBAND_TX_AMP));
 
@@ -200,7 +200,7 @@ public class SatBand implements ModelInterface {
     }
 
     protected void initPulseandGrad() throws Exception {
-        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb);
+        pulseTXSatBand = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_sb, SP.Tx_phase_sb, SP.Time_tx_sb, SP.Tx_shape_sb, SP.Tx_shape_phase_sb, SP.Freq_offset_tx_sb, parent.nucleus);
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_sb.name()) != null) {
             pulseTXSatBand.createAttOffset(parent.getSequence(), SP.Tx_att_offset_sb);
         }
@@ -413,9 +413,9 @@ public class SatBand implements ModelInterface {
         } else {
             pulseTXSatBand.setFrequencyOffset(isSatBandEnabled ? Order.LoopB : isTofBandEnabled ? Order.Three : Order.FourLoop);
         }
-        RFPulse pulseTXSatBandPrep = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_sb, SP.Freq_offset_tx_sb_prep);
+        RFPulse pulseTXSatBandPrep = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_sb, SP.Freq_offset_tx_sb_prep, parent.nucleus);
         pulseTXSatBandPrep.setCompensationFrequencyOffset(pulseTXSatBand, 0.5);
-        RFPulse pulseTXSatBandComp = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_sb, SP.Freq_offset_tx_sb_comp);
+        RFPulse pulseTXSatBandComp = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_sb, SP.Freq_offset_tx_sb_comp, parent.nucleus);
         pulseTXSatBandComp.setCompensationFrequencyOffset(pulseTXSatBand, 0.5);
     }
 

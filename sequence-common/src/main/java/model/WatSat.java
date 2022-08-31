@@ -217,7 +217,7 @@ public class WatSat implements ModelInterface {
 
     protected void initPulseandGrad() throws Exception {
         pulseTXWatSat = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_ws, SP.Tx_phase_ws,
-                SP.Time_tx_ws, SP.Tx_shape_ws, SP.Tx_shape_phase_ws, SP.Freq_offset_tx_ws);
+                SP.Time_tx_ws, SP.Tx_shape_ws, SP.Tx_shape_phase_ws, SP.Freq_offset_tx_ws, parent.nucleus);
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_ws.name()) != null) {
             pulseTXWatSat.createAttOffset(parent.getSequence(), SP.Tx_att_offset_ws);
         }

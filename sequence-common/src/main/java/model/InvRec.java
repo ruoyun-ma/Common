@@ -12,6 +12,8 @@ import java.util.List;
 
 import common.*;
 import kernel.*;
+import rs2d.spinlab.tools.utility.Nucleus;
+
 import static common.CommonUP.*;
 import static common.CommonSP.*;
 
@@ -75,7 +77,6 @@ public class InvRec implements ModelInterface {
     @Override
     public void initPre() throws Exception {
         time_TI_delay = parent.getSequenceTable(SP.Time_TI_delay);
-
         isInvRecEnabled = parent.getBoolean(UP.INVERSION_RECOVERY_ENABLED) || parent.getBoolean(UP.INVERSION_RECOVERY);
         inversionRecoveryTime = parent.getListDouble(UP.INVERSION_TIME_MULTI);
         nb_inversionRecovery = isInvRecEnabled ? inversionRecoveryTime.size() : 1;
@@ -212,8 +213,9 @@ public class InvRec implements ModelInterface {
     }
 
     protected void initPulseandGrad() {
+
         pulseTXIR = RFPulse.createRFPulse(parent.getSequence(), Tx_att, Tx_amp_180, Tx_phase_180,
-                SP.Time_tx_IR_length, Tx_shape_180, Tx_shape_phase_180, SP.Tx_freq_offset_IR);
+                SP.Time_tx_IR_length, Tx_shape_180, Tx_shape_phase_180, SP.Tx_freq_offset_IR, parent.nucleus);
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_IR.name()) != null) {
             pulseTXIR.createAttOffset(parent.getSequence(), SP.Tx_att_offset_IR);
         }
@@ -234,7 +236,7 @@ public class InvRec implements ModelInterface {
             pulseTXIR.setFrequencyOffset(isInvRecEnabled ? Order.Three : Order.FourLoop);
         }
 
-        RFPulse pulseTXIRPrep = RFPulse.createRFPulse(parent.getSequence(), Time_grad_ramp, SP.FreqOffset_tx_prep_IR);
+        RFPulse pulseTXIRPrep = RFPulse.createRFPulse(parent.getSequence(), Time_grad_ramp, SP.FreqOffset_tx_prep_IR, parent.nucleus);
         pulseTXIRPrep.setCompensationFrequencyOffset(pulseTXIR, 0.5);
     }
 

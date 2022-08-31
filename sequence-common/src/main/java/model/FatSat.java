@@ -117,9 +117,9 @@ public class FatSat implements ModelInterface {
     public void prepFinal() {
         if (isAttAuto) {
             if (parent.hasParam(UP.FATSAT_TX_AMP_90)) {
-                parent.getParam(UP.FATSAT_TX_AMP_90).setValue(pulseTXFatSat.getAmp90());
+                parent.getParam(UP.FATSAT_TX_AMP_90).setValue(pulseTXFatSat.getAmp());
             } else if (parent.hasParam(UP.FATSAT_TX_AMP)) {
-                parent.getParam(UP.FATSAT_TX_AMP).setValue(pulseTXFatSat.getAmp90());
+                parent.getParam(UP.FATSAT_TX_AMP).setValue(pulseTXFatSat.getAmp());
             }
         } else {
             if (parent.hasParam(UP.FATSAT_TX_AMP_90)) {
@@ -175,7 +175,7 @@ public class FatSat implements ModelInterface {
 
     protected void initPulseandGrad() throws Exception {
         pulseTXFatSat = RFPulse.createRFPulse(parent.getSequence(), Tx_att, SP.Tx_amp_fs, SP.Tx_phase_fs,
-                SP.Time_tx_fs, SP.Tx_shape_fs, SP.Tx_shape_phase_fs, SP.Freq_offset_tx_fs);
+                SP.Time_tx_fs, SP.Tx_shape_fs, SP.Tx_shape_phase_fs, SP.Freq_offset_tx_fs, parent.nucleus);
 
         if (parent.getSequence().getPublicTable(SP.Tx_att_offset_fs.name()) != null) {
             pulseTXFatSat.createAttOffset(parent.getSequence(), SP.Tx_att_offset_fs);
@@ -241,9 +241,9 @@ public class FatSat implements ModelInterface {
     protected void prepPulseComp() {
         pulseTXFatSat.setFrequencyOffset(isFatSatEnabled ? parent.getDouble(UP.FATSAT_OFFSET_FREQ) : 0.0);
 
-        RFPulse pulseTXFatSatPrep = RFPulse.createRFPulse(parent.getSequence(), SP.Time_before_fs_pulse, SP.Freq_offset_tx_fs_prep);
+        RFPulse pulseTXFatSatPrep = RFPulse.createRFPulse(parent.getSequence(), SP.Time_before_fs_pulse, SP.Freq_offset_tx_fs_prep, parent.nucleus);
         pulseTXFatSatPrep.setCompensationFrequencyOffset(pulseTXFatSat, 0.5);
-        RFPulse pulseTXFatSatComp = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_fs, SP.Freq_offset_tx_fs_comp);
+        RFPulse pulseTXFatSatComp = RFPulse.createRFPulse(parent.getSequence(), SP.Time_grad_ramp_fs, SP.Freq_offset_tx_fs_comp, parent.nucleus);
         pulseTXFatSatComp.setCompensationFrequencyOffset(pulseTXFatSat, 0.5);
     }
 

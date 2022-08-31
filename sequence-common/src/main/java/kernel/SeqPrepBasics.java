@@ -3,6 +3,7 @@ package kernel;
 import org.w3c.dom.ls.LSOutput;
 import rs2d.commons.log.Log;
 import rs2d.spinlab.data.transformPlugin.TransformPlugin;
+import rs2d.spinlab.exception.ConfigurationException;
 import rs2d.spinlab.sequence.table.Table;
 import rs2d.spinlab.sequence.table.Utility;
 import rs2d.spinlab.sequenceGenerator.BaseSequenceGenerator;
@@ -114,7 +115,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
     public int nb_averages;
     public int nb_interleaved_slice;
     public int nb_planar_excitation;
-    //public int nb_slices_acquired_in_single_scan;
+    public int nb_slices_acquired_in_single_scan;
     public int nb_shoot_3d;
     public int nb_preScan;
     public int nb_echo_4D;
@@ -152,7 +153,7 @@ public abstract class SeqPrepBasics extends BaseSequenceGenerator {
         this.checkAndFireException();
     }
 
-    public abstract void initUserParam();
+    public abstract void initUserParam() throws ConfigurationException;
 
     public void beforeRouting() throws Exception {
         Log.debug(getClass(), "------------ BEFORE ROUTING -------------");

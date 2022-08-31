@@ -8,6 +8,7 @@ import rs2d.spinlab.sequenceGenerator.GeneratorSequenceParamEnum;
 import rs2d.spinlab.tools.utility.Nucleus;
 
 /**
+ * Commons V2.8: add instrument interface
  * Class Gradient
  * V2.9 with ratio for non proton
  * V2.3- 2019-06-06 JR from DW EPI
@@ -16,8 +17,8 @@ import rs2d.spinlab.tools.utility.Nucleus;
 public class Gradient2Event extends Gradient {
 
     protected Gradient2Event gradFlowComp = null;
-    protected static double gMax = GradientMath.getMaxGradientStrength();
 
+    protected static double gMax = GradientMath.getMaxGradientStrength();
 
     public Gradient2Event(Table amplitudeTab, Shape shapeUpTab, Shape shapeDownTab, Table rampTimeUpTab, Table rampTimeDownTab) {
         super(amplitudeTab, null, shapeUpTab, shapeDownTab, rampTimeUpTab, rampTimeDownTab);
@@ -59,15 +60,13 @@ public class Gradient2Event extends Gradient {
     /**
      * Calculate equivalentTime of a rectangular gradient with same Area and amplitude
      *
-     * @return equivalentTime :
      */
     @Override
-    public double prepareEquivalentTime() {
+    public void prepareEquivalentTime() {
         if (Double.isNaN(grad_shape_rise_time)) {
             computeShapeRiseTime();
         }
         equivalentTime = grad_shape_rise_time;
-        return equivalentTime;
     }
 
     @Override
