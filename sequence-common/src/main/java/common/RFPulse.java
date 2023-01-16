@@ -72,6 +72,12 @@ public class RFPulse {
     private double sincGenRampSlope = 0.2;
     private Table attOffsetTable = null;//new Table(0, NumberEnum.TxAtt);
 
+    // added parameters for HS pulse
+    private double HSbandwidth;
+    private double HStruncation;
+    private double HSorder;
+    private double HSgammaB1;
+
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Constructor
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -186,9 +192,15 @@ public class RFPulse {
         return powerPulse;
     }
 
+    public Table getAmplitudeTable() {
+        return amplitudeTable;
+    }
+
     public Order getFrequencyOffsetOrder() {
         return FrequencyOffsetOrder;
     }
+
+    public Table getPhaseTable(){ return phase;}
 
     public int getNumberOfFreqOffset() {
         return numberOfFreqOffset;
@@ -263,6 +275,21 @@ public class RFPulse {
         setSequenceTableSingleValue(amplitudeTable, tx_amp);
     }
 
+    public void setHSbandwidth (double bw) {HSbandwidth = bw; }
+
+    public void setHStruncation (double tc) {HStruncation = tc; }
+
+    public void setHSorder (double od) {HSorder = od;}
+
+    public void setHSgammaB1 (double gB1) {HSgammaB1 = gB1;}
+
+    public double getHSbandwidth() {return HSbandwidth;}
+
+    public double getHStruncation() {return HStruncation;}
+
+    public double getHSorder() {return HSorder;}
+
+    public double getHSgammaB1() {return HSgammaB1;}
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Calculation Amp Att...
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
@@ -430,6 +457,49 @@ public class RFPulse {
     }
 
     /**
+     *  Calculate the power needed to achieve HSgammaB& and check if it exceeds the instrument power limit
+     *
+     * @param observe_frequency set pulse property
+     * @param nucleus           set pulse property
+     * @return test_change_time = false if the pulseDuration was increase because of exceeding power max
+     */
+
+    public boolean checkHSPower( double observe_frequency, Nucleus nucleus) {
+        observeFrequency = observe_frequency;
+        this.nucleus = nucleus;
+        boolean test_change_gammaB1 = true;
+        test_change_gammaB1 = calculateHSPower();
+        return test_change_gammaB1;
+    }
+
+    /**
+     * calculate HS powerPulse from HSgammaB1, and check if the power exceed the instrument power limit
+     *
+     * @return test_change_time = false if exceeding power max, HSgammaB1 will be changed
+     */
+    private boolean calculateHSPower() {
+        boolean test_change_gammaB1 = true;
+
+        double TXLength_eff = 0.25/HSgammaB1;
+        double instrument_length = PowerComputation.getHardPulse90Width(nucleus.name());
+        double instrument_power = PowerComputation.getHardPulse90Power(nucleus.name());
+        powerPulse = instrument_power*(instrument_length/TXLength_eff)*(instrument_length/TXLength_eff);
+        System.out.println("instrument_length =" + instrument_length) ;
+        System.out.println("TXLength_eff =" + TXLength_eff ) ;
+        System.out.println("HSgammaB1 =" + HSgammaB1 ) ;
+        if (powerPulse > Hardware.getMaxRfPowerPulsed(nucleus.name())) {
+            System.out.println("Out of range powerPulse HS = " + powerPulse);
+            powerPulse = Hardware.getMaxRfPowerPulsed(nucleus.name());
+            TXLength_eff = instrument_length*Math.sqrt(instrument_power/powerPulse);
+            HSgammaB1 = 0.25/TXLength_eff;
+            test_change_gammaB1 = false;
+
+        }
+        return test_change_gammaB1;
+
+    }
+
+    /**
      * Calculate the flip angle obtained with the pulse power knowing the power needed to flip the magnetisation to 90°
      *  (it supposes that the system has been well calibrated)
      * @return flipAngle
@@ -498,6 +568,26 @@ public class RFPulse {
     }
 
     /**
+     * prepare TX amplitude for HS pulse
+     *
+     *@param txRoute
+     * @return tx_amp
+     */
+    public double prepTxAmpHS(List<Integer> txRoute) {
+
+        txAtt = ((NumberParam) attParam).getValue().intValue();
+
+        double TXLength_eff = 0.25/HSgammaB1;
+
+        double instrument_length = PowerComputation.getHardPulse90Width(nucleus.name());
+        double instrument_power = PowerComputation.getHardPulse90Power(nucleus.name());
+        double tx_amp_hardpulse = PowerComputation.getTxAmplitude(txRoute.get(0), instrument_power, observeFrequency, txAtt);
+        tx_amp = tx_amp_hardpulse*instrument_length/TXLength_eff;
+        setSequenceTableSingleValue(amplitudeTable, tx_amp);
+        return tx_amp;
+    }
+
+    /**
      * prepare and set txAmp according to txAtt , flipAngle
      *
      * @param txRoute : Tx channel
@@ -523,6 +613,38 @@ public class RFPulse {
 
     public double prepTxAmpMultiFA(List<Integer> txRoute, List<Double> FA_list, Order order) {
         return prepTxAmpMultiFA(txRoute, FA_list.stream().mapToDouble(d -> d).toArray(), order);
+    }
+
+    /**
+     * prepare and set txAmp according to GAMMAB1 for adiabatic pulses
+     *
+     * @param txRoute  : Tx channel
+     * @return tx_amp : amplitude
+     */
+    public double prepTxAmpMultiHS(List<Integer> txRoute, List<Double> gB1_list, Order order) {
+        return prepTxAmpMultiHS(txRoute, gB1_list.stream().mapToDouble(d -> d).toArray(), order);
+    }
+    public double prepTxAmpMultiHS(List<Integer> txRoute, double[] gB1_list, Order order) {
+
+        txAtt = ((NumberParam) attParam).getValue().intValue();
+
+        double instrument_length = PowerComputation.getHardPulse90Width(nucleus.name());
+        double instrument_power = PowerComputation.getHardPulse90Power(nucleus.name());
+        System.out.println("prepTxAmpHS txATT = " + txAtt);
+        double tx_amp_hardpulse = PowerComputation.getTxAmplitude(txRoute.get(0), instrument_power, observeFrequency, txAtt);
+        amplitudeTable.clear();
+        double TXLength_eff;
+        for (int i = 0; i < gB1_list.length; i++){
+            if (gB1_list[i] == 0){
+                tx_amp = 0.00000;
+            } else {
+                TXLength_eff = 0.25 / gB1_list[i];
+                tx_amp = tx_amp_hardpulse*instrument_length/TXLength_eff;
+            }
+            amplitudeTable.add(tx_amp);
+        } ;
+
+        return tx_amp;
     }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Shape
@@ -583,6 +705,15 @@ public class RFPulse {
             shapePhase.clear();
             setTableValuesFromToneGen(shape, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
             setTableValuesFromTonePhaseGen(shapePhase, numberOfPoint, 3, 100, false, "Hamming", 2, 0.1);
+        } else if ("HS".equalsIgnoreCase(pulseName)){
+            shape.clear();
+            shapePhase.clear();
+            double beta = 5.289/pulseDuration*2;
+            setShapeTableValuesFromHSGen(shape, shapePhase, numberOfPoint,pulseDuration,HSbandwidth, beta );
+        } else if ("HSHighOrder".equalsIgnoreCase(pulseName)) {
+            shape.clear();
+            shapePhase.clear();
+            setShapeTableValuesFromHSHighOrdergGen(shape, shapePhase, numberOfPoint, pulseDuration, HSbandwidth, HStruncation, HSorder);
         }
     }
 
@@ -818,6 +949,176 @@ public class RFPulse {
         sincGenRampSlope = val;
     }
 
+    /**
+     * Generate a table of element of HyperbolicSecant pulse
+     *
+     * @param table_shape   The table to be set
+     * @param table_shape_phase   The table to be set
+     * @param nbpoint The number of point of the generated Hyperbolic secant signal, should be a multiple of 4
+     * @param duration Duration of pulse in seconds.
+     * @param bandwidthHS bandwidth of the HS pulse (Hz), currently set to 8400 Hz
+     * @param beta AM waveform parameter (rad/s)
+     *
+     *
+     */
+    private void setShapeTableValuesFromHSGen(Table table_shape, Table table_shape_phase, int nbpoint, double duration, double bandwidthHS, double beta) {
+       /* r"""Design a hyperbolic secant adiabatic pulse.
+
+        mu * beta becomes the amplitude of the frequency sweep
+
+        Args:
+        nbpoint (int): number of samples (should be a multiple of 4).
+                beta (float): AM waveform parameter.
+                mu (float): a constant, determines amplitude of frequency sweep.
+        duration(float): pulse time (s).
+        beta (float): AM waveform parameter. (rad/s)
+        bandwidthHS : bandwidth of HS pulse. (Hz)
+
+        Calculates
+
+        - **table_shape** (*array*): AM waveform.
+        - **table_shape_phase** (*array*): phase
+
+        References:
+        Bernstein M, King K, Zhou X, Handbook of PulseSequence Chapter 6, 6.2.3, pp194
+        """
+        */
+
+        double mu = bandwidthHS * Math.PI / beta; // mu determines amplitude of frequency sweep
+        double[] t = new double[nbpoint];
+        //double [] shape_mag = new double[nbpoint];
+        double [] shape_pha = new double[nbpoint];
+        double [] shape_pha_wrap = new double[nbpoint];
+        for (int i = 0; i < nbpoint; i++) {
+            double ii;
+            ii = i;
+            t[i] = (ii - nbpoint / 2) / nbpoint * duration;
+
+            table_shape.add (100 / Math.cosh(t[i] * beta));
+            shape_pha[i] = -mu * Math.log(Math.cosh(beta * t[i]));
+            shape_pha_wrap[i] = -Math.atan2(Math.sin(shape_pha[i]),Math.cos(shape_pha[i]));
+            if (shape_pha_wrap[i] < 0){
+                shape_pha_wrap[i] = shape_pha_wrap[i] / Math.PI * 180.0 + 360.0;
+            } else {
+                shape_pha_wrap[i] = shape_pha_wrap[i] / Math.PI * 180.0;
+            }
+            table_shape_phase.add(shape_pha_wrap[i]);
+
+        }
+
+    }
+
+
+
+    /**
+     * Generate a table of element for High Order HS pulse
+     *
+     * @param table_shape   The table to be set
+     * @param table_shape_phase   The table to be set
+     * @param nbpoint The number of point of the generated Hyperbolic secant signal, should be a multiple of 4
+     * @param duration Duration of pulse in seconds.
+     * @param bandwidthHS bandwidth of the HS pulse (Hz), currently set to 8400 Hz
+     * @param powerNumber power of HS pulse
+     *
+     *
+     */
+    private void setShapeTableValuesFromHSHighOrdergGen(Table table_shape, Table table_shape_phase, int nbpoint, double duration, double bandwidthHS, double tc, double powerNumber) {
+       /* r"""Design a hyperbolic secant adiabatic pulse.
+       code implementation based on rf design tool from FID_A
+       https://github.com/CIC-methods/FID-A/blob/master/rfPulseTools/rf_hs.m
+
+        mu * beta becomes the amplitude of the frequency sweep
+
+        Args:
+        nbpoint (int): number of samples (should be a multiple of 4).
+                beta (float): AM waveform parameter.
+                mu (float): a constant, determines amplitude of frequency sweep.
+        duration(float): pulse time (s).
+
+        bandwidthHS : bandwidth of HS pulse. (Hz)
+        truncation factor: truncation factor for HS pulses, should be smaller than1
+
+        Calculates
+
+        - **table_shape** (*array*): AM waveform.
+        - **table_shape_phase** (*array*): phase
+
+        References:
+        Bernstein M, King K, Zhou X, Handbook of PulseSequence Chapter 6, 6.2.3, pp194
+        """
+        */
+
+        double B = Math.log(1/tc + Math.sqrt(1/tc/tc -1)); // arcsech (tc)
+        double A = bandwidthHS / 2;
+
+        double [] tau = new double[nbpoint];
+        double [] F1 = new double[nbpoint];
+        double [] F1cumsum = new double [nbpoint/2];
+        double [] F1cumsumFlip = new double [nbpoint/2];
+        double [] F2 = new double[nbpoint];
+        double nbpoint_db = nbpoint;
+
+        System.out.println(" -------------HS print start --------------");
+        System.out.println("order = "+powerNumber);
+        System.out.println("truncation = "+tc);
+        System.out.println("bandwidth = "+bandwidthHS);
+        System.out.println("B = "+B);
+        for (int i = 0; i < nbpoint; i++) {
+
+            double ii;
+            ii = i;
+            tau[i] = (ii - nbpoint_db / 2) / nbpoint_db * 2;
+            F1[i] = 1/Math.cosh(B * Math.pow(tau[i],powerNumber));
+            table_shape.add(F1[i]*100.0);
+            //System.out.println(Math.pow(tau[i],powerNumber));
+
+            //table_shape.add(100 / Math.cosh(t[i] * beta));
+            //table_shape_phase.add( 180 / Math.PI * mu * Math.cosh(beta * t[i]));
+        }
+        F1cumsum[0] = F1[nbpoint/2];
+        for (int i = nbpoint/2+1; i < nbpoint; i++){
+            F1cumsum[i-nbpoint/2] = F1cumsum[i-nbpoint/2-1] + F1[i];
+            F1cumsumFlip[nbpoint-i-1] = -F1cumsum[i-nbpoint/2];
+        }
+        for (int i = 0; i < nbpoint/2; i++){
+            F2[i+nbpoint/2] = F1cumsum[i];
+            F2[i] = F1cumsumFlip[i];
+        }
+        double F2max = 0;
+        for (int i = 0; i < nbpoint; i++){
+            if (F2[i] > F2max) {
+                F2max = F2[i];
+            }
+        }
+        double dt = duration/nbpoint_db;
+        double [] FMcumsum = new double [nbpoint];
+        FMcumsum[0] = A * F2[0]/F2max;
+        for (int i = 1; i < nbpoint; i++){
+            FMcumsum[i] = A * F2[i]/F2max + FMcumsum[i-1];
+        }
+        double [] ph = new double [nbpoint];
+        for (int i = 0; i < nbpoint; i++){
+            table_shape_phase.add( FMcumsum[i] *dt *360.0);
+        }
+    }
+
+    public void fillShape(List<Number> rfShape, List<Number> rfShapePhase){
+        this.shape.clear();
+        this.shapePhase.clear();
+        for (int i = 0; i<rfShape.size(); i++) {
+            this.shape.add(rfShape.get(i));
+            this.shapePhase.add(rfShapePhase.get(i));
+        }
+    }
+
+    public void fillShape(List<Number> rfShape){
+        this.shape.clear();
+        for (int i = 0; i<rfShape.size(); i++) {
+            this.shape.add(rfShape.get(i));
+
+        }
+        this.shapePhase.clear();
+    }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
     //                  Offset Frequency
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
